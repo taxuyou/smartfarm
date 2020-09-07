@@ -1,0 +1,64 @@
+{
+    "predict": "oneshot_predict",
+    "data":{
+        "train_data":{
+            "path": "./dataset/2nd_data/kim",
+            "names": ["kim_env_detail_data.xlsx", "kim_growth_detail_data.xlsx", "kim_product_1_data.xlsx", "kim_product_2_data.xlsx"]
+        },
+        "label_data":{
+            "path": "./dataset/2nd_data/kim",
+            "names": ["kim_product_3_data.xlsx", "kim_product_4_data.xlsx"]
+        },
+        "num_samples": 16,
+        "seek_days": 43,
+        "num_data": 9
+    },
+
+    "model":{
+        "name":"lstm_enc_dec",
+        "pretrained": false,
+        "config": {
+            "permute": false,
+            "avg": true,
+            "model_path": ".",
+            "input_shapes": [],
+            "output_shape": [],
+            "explain": true,
+            "env_only": false
+        }
+    },
+
+    "train":{
+        "epochs": 500,
+        "batch": 1,
+        "metric": "mse"
+    },
+
+    "optimizer":{
+        "algorithm": "sgd",
+        "config": {
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": true
+        }
+    },
+
+    "util":{
+        "save_path": "exp",
+        "heatmap": {
+            "avail": true,
+            "name": "env_heatmap.png",
+            "x_labels": ["in_temperature", "in_humidity", "dew point (Td)", "HD", "atmospheric pressure", "pws",
+                                 "W (moisture content)", "h (enthalpy)", "v (specific volume)", "rho (density)", 
+                                 "pw (Partial pressure) water vapor", "Absolute Humidity (AH)", "absoluteAH"]
+        },
+        "bar": {
+            "avail": true,
+            "name": "env_bar.png"
+        }
+    },
+
+    "device":{
+        "name": "/device:GPU:0"
+    }
+}

@@ -1,0 +1,54 @@
+{
+    "predict": "mlp",
+    "data":{
+        "train_data":{
+            "path": "./jypark/2nd_data",
+            "names": ["harvest.csv","farm_data.csv"]
+        },
+        "label_data":{
+            "path": "./jypark/2nd_data",
+            "names": ["harvest_label.csv", "farm_data_label.csv"]
+        },
+        "num_samples": 16,
+    },
+
+    "model":{
+        "name":"Mlp",
+        "pretrained": false,
+        "config": {
+            "permute": false,
+            "avg": true,
+            "model_path": ".",
+            "input_shapes": [],
+            "output_shape": [],
+            "explain": true
+        }
+    },
+
+    "train":{
+        "epochs": 500,
+        "batch": 16,
+        "metric": "mse"
+    },
+
+    "optimizer":{
+        "algorithm": "sgd",
+        "config": {
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": true
+        }
+    },
+
+    "util":{
+        "save_path": "exp",
+        "bar": {
+            "avail": true,
+            "name": "env_bar.png"
+        }
+    },
+
+    "device":{
+        "name": "/device:GPU:0"
+    }
+}

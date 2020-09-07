@@ -1,0 +1,73 @@
+{
+    "predict": "oneshot_predict",
+    "data":{
+        "train_data":{
+            "path": "./dataset/2nd_data",
+            "names": ["avg_env_data2.xlsx"]
+        },
+        "label_data":{
+            "path": "./dataset/2nd_data",
+            "names": ["product_3_data.xlsx", "product_4_data.xlsx"]
+        },
+        "num_samples": 16,
+        "seek_days": 49,
+        "num_data": 7
+    },
+
+    "model":{
+        "name":"lstm_enc_dec",
+        "pretrained": false,
+        "config": {
+            "permute": false,
+            "avg": true,
+            "model_path": ".",
+            "input_shapes": [],
+            "output_shape": [],
+            "explain": true,
+            "env_only": true
+        }
+    },
+
+    "train":{
+        "epochs": 1000,
+        "batch": 1,
+        "metric": "mse"
+    },
+
+    "optimizer":{
+        "algorithm": "sgd",
+        "config": {
+            "learning_rate": 0.0001,
+            "momentum": 0.9,
+            "nesterov": true
+        }
+    },
+
+    "util":{
+        "save_path": "exp2",
+        "heatmap": {
+            "avail": true,
+            "name": "env_heatmap.png",
+            "x_labels": ["in_temperature", "in_humidity", "dew point (Td)", "HD", "atmospheric pressure", "pws", 
+                "W (moisture content)", "h (enthalpy)", "v (specific volume)", "rho (density)", 
+                "pw (Partial pressure) water vapor", "Absolute Humidity (AH)", "absoluteAH", 
+                "in_temperature_std", "in_humidity_std", "dew point (Td)_std", "HD_std", "atmospheric pressure_std", "pws_std", 
+                "W (moisture content)_std", "h (enthalpy)_std", "v (specific volume)_std", "rho (density)_std", 
+                "pw (Partial pressure) water vapor_std", "Absolute Humidity (AH)_std", "absoluteAH_std", 
+                "in_temperature_min", "in_humidity_min", "dew point (Td)_min", "HD_min", "atmospheric pressure_min", "pws_min", 
+                "W (moisture content)_min", "h (enthalpy)_min", "v (specific volume)_min", "rho (density)_min", 
+                "pw (Partial pressure) water vapor_min", "Absolute Humidity (AH)_min", "absoluteAH_min", 
+                "in_temperature_max", "in_humidity_max", "dew point (Td)_max", "HD_max", "atmospheric pressure_max", "pws_max", 
+                "W (moisture content)_max", "h (enthalpy)_max", "v (specific volume)_max", "rho (density)_max", 
+                "pw (Partial pressure) water vapor_max", "Absolute Humidity (AH)_max", "absoluteAH_max"]
+        },
+        "bar": {
+            "avail": false,
+            "name": "env_bar.png"
+        }
+    },
+
+    "device":{
+        "name": "/device:GPU:0"
+    }
+}

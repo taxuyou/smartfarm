@@ -1,0 +1,2 @@
+model_checkpoint_path: "rda_basic_lstm_0500.ckpt"
+all_model_checkpoint_paths: "rda_basic_lstm_0500.ckpt"
