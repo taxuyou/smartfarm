@@ -23,7 +23,7 @@ def draw_heatmap(heatmap, x_labels, y_labels, filename):
     plt.savefig(filename)
 
 
-def draw_bargraph(data, filename, reverse_index=False):
+def draw_bargraph(data, filename, x_labels=None, reverse_index=False):
     if reverse_index:
         index = [i for i in range(len(data), 0, -1)]
     else:
@@ -31,6 +31,8 @@ def draw_bargraph(data, filename, reverse_index=False):
     plt.figure()
     plt.bar(index, data)
     plt.title(filename)
+    if x_labels is not None:
+        plt.xticks(index, x_labels, rotation=90)
     plt.tight_layout()
     plt.savefig(filename)
 
