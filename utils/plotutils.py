@@ -2,16 +2,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import xgboost as xgb
+import tensorflow as tf
 
 
-__all__ = ['draw_heatmap', 'draw_bargraph', 
+__all__ = ['draw_heatmap', 'draw_bargraph', 'draw_harvest_per_sample',
            'draw_rda_dataframe', 'draw_dt_result_compare_1', 
            'draw_dt_result_compare_2', 'draw_dt_feature_importance',
            'draw_bl_losses', 'draw_bl_result_compare_1',
            'draw_bl_result_compare_2',
           ]
 
-
+'''
+plot one shot
+'''
 def draw_heatmap(heatmap, x_labels, y_labels, filename):
 
     plt.figure()
@@ -34,6 +37,57 @@ def draw_bargraph(data, filename, x_labels=None, reverse_index=False):
     if x_labels is not None:
         plt.xticks(index, x_labels, rotation=90)
     plt.tight_layout()
+    plt.savefig(filename)
+
+def autolabel(ax, rects, xpos='center'):
+    ha = {'center':'center', 'right':'left', 'left':'right'}
+    offset = {'center':0, 'right':1, 'left':-1}
+
+    for rect in rects:
+        height = rect.get_height()
+        if height > 0:
+            ax.annotate('{0:.2f}'.format(height), 
+                        xy=(rect.get_x()+rect.get_width()/2, height),
+                        xytext=(offset[xpos]*3, 2),
+                        textcoords="offset points",
+                        ha=ha[xpos], va='bottom')
+
+def draw_harvest_per_sample(out, gt, filename):
+    b, h, w, c = out.shape
+    
+    h, w = int(h), int(w)
+    width = 0.35
+    index = np.arange(w)
+    
+    cols = 4
+    rows = int(np.ceil(h / cols))
+    
+    fig, axes = plt.subplots(ncols=cols, nrows=rows, figsize=(16, 16))
+    out = tf.reshape(out, [h, w])
+    gt = tf.reshape(gt, [h, w])
+    
+    r_index, c_index, s_index = 0, 0, 1
+    for o, g in zip(out, gt):
+        rects1 = axes[r_index][c_index].bar(index - width/2, o, width, label='Pred')
+        rects2 = axes[r_index][c_index].bar(index + width/2, g, width, label='Truth')
+        axes[r_index][c_index].set_title("Sample {}".format(s_index))
+        axes[r_index][c_index].legend()
+        autolabel(axes[r_index][c_index], rects1, "left")
+        autolabel(axes[r_index][c_index], rects2, "right")
+        
+        c_index += 1
+        s_index += 1
+        
+        if c_index == cols:
+            r_index += 1
+            c_index = 0
+    
+    d_index = r_index * cols + c_index
+    
+    for i in range(d_index, rows * cols):
+        fig.delaxes(axes.flatten()[i])
+        
+    fig.tight_layout()
     plt.savefig(filename)
 
 

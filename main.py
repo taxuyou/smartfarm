@@ -110,6 +110,8 @@ def oneshot_predict(args):
                 groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
                 tensor2csv(output_path, out)
                 tensor2csv(groundtruth_path, targets)
+                harvest_path = os.path.join(save_path, 'harvest.png')
+                draw_harvest_per_sample(out, targets, harvest_path)
         
         # Drawing heatmap and bar chart for explanation
         if args.model.config.explain:

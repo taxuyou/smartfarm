@@ -24,7 +24,7 @@ class Encoder_Decoder(keras.Model):
 
     def call(self, x, training=True):
         if training:
-            tf.keras.backend.set_learning_phase(1)
+            tf.keras.backend.set_learning_phase(1) # tf.keras.backend.set_learning_phase will removed at 2020-10-11
         else:
             tf.keras.backend.set_learning_phase(0)
         x1, x2, x3, x4 = x
