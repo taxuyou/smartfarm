@@ -44,17 +44,30 @@
     },
 
     "util":{
-        "save_path": "exp",
-        "heatmap": {
+        "save_path": "experiments/lstm_enc_dec",
+        "env_heatmap": {
             "avail": true,
             "name": "env_heatmap.png",
-            "x_labels": ["in_temperature", "in_humidity", "dew point (Td)", "HD", "atmospheric pressure", "pws",
-                                 "W (moisture content)", "h (enthalpy)", "v (specific volume)", "rho (density)", 
-                                 "pw (Partial pressure) water vapor", "Absolute Humidity (AH)", "absoluteAH"]
+            "x_labels": ["in_temperature", "in_humidity", "dew point (Td)", "HD", "atmospheric pressure", "pws", "W (moisture content)", "h (enthalpy)", "v (specific volume)",
+                "rho (density)", "pw (Partial pressure) water vapor", "Absolute Humidity (AH)", "absoluteAH", 
+                "in_temperature_std", "in_humidity_std", "dew point (Td)_std", "HD_std", "atmospheric pressure_std", "pws_std", "W (moisture content)_std", "h (enthalpy)_std", 
+                "v (specific volume)_std",  "rho (density)_std", "pw (Partial pressure) water vapor_std", "Absolute Humidity (AH)_std", "absoluteAH_std", 
+                "in_temperature_min", "in_humidity_min", "dew point (Td)_min", "HD_min", "atmospheric pressure_min", "pws_min", "W (moisture content)_min", "h (enthalpy)_min",
+                "v (specific volume)_min", "rho (density)_min", "pw (Partial pressure) water vapor_min", "Absolute Humidity (AH)_min", "absoluteAH_min", 
+                "in_temperature_max", "in_humidity_max", "dew point (Td)_max", "HD_max", "atmospheric pressure_max", "pws_max", "W (moisture content)_max", "h (enthalpy)_max",
+                "v (specific volume)_max", "rho (density)_max", "pw (Partial pressure) water vapor_max", "Absolute Humidity (AH)_max", "absoluteAH_max", 
+                "am_suitable_HD", "sun_suitable_HD", "day_suitable_HD", "pm_unsuitable_HD", "am_unsuitable_HD",
+                "low_temperature", "high_temperature", "suitable_temperature", "daytime_temperature", "nighttime_temperature", "afternoon_temperature",
+                "suitable_temperature_time", "suitable_humidity_time", "sunrise_diff", "sunset_diff", "suitable_temperature_diff_lowerbound",
+                "suitable_temperature_diff_upperbound"]
         },
-        "bar": {
+        "growth_heatmap": {
             "avail": true,
-            "name": "env_bar.png"
+            "name": "growth_heatmap.png",
+            "x_labels": ["sample_number", "weekly_growth_length(cm)", "plant_length(cm)", "stem_thickness(mm)", "leaf_length(cm)", "leaf_width(cm)",
+                "number_of_leaf", "flower_room(cm)", "flower_distance(cm)", "flower_room_distance(cm)", "branch_thickness(mm)",
+                "leaf_area", "suitable_growth_length", "suitable_thickness", "suitable_leaf_length", "suitable_leaf_width",
+                "suitable_number_of_leaf", "suitable_leaf_area", "suitable_flower_room", "suitable_flower_distance", "growth_type_score", "growth_type"]
         }
     },
 

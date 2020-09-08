@@ -110,29 +110,25 @@ def oneshot_predict(args):
         # Drawing heatmap and bar chart for explanation
         if args.model.config.explain:
             if args.model.config.env_only:
-                if args.util.heatmap.avail:
+                if args.util.env_heatmap.avail:
                     e = model.explain(ds, return_heatmap=True)
-                    x_labels = args.util.heatmap.x_labels
+                    x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
-                    heatmap_path = os.path.join(save_path, args.util.heatmap.name)
+                    heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
                     draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
-                
-                if args.util.bar.avail:
-                    e = model.explain(ds, return_heatmap=False)
-                    bar_path = os.path.join(save_path, args.util.bar.name)
-                    draw_bargraph(data=e, filename=bar_path, reverse_index=False)
             else:
-                if args.util.heatmap.avail:
-                    e, g, p1, p2 = model.explain(ds, return_heatmap=True)
-                    x_labels = args.util.heatmap.x_labels
+                if args.util.env_heatmap.avail:
+                    e, _, _, _ = model.explain(ds, return_heatmap=True)
+                    x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
-                    heatmap_path = os.path.join(save_path, args.util.heatmap.name)
+                    heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
                     draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
                 
-                if args.util.bar.avail:
-                    e, g, p1, p2 = model.explain(ds, return_heatmap=False)
-                    bar_path = os.path.join(save_path, args.util.bar.name)
-                    draw_bargraph(data=g, filename=bar_path, reverse_index=False)
+                if args.util.growth_heatmap.avail:
+                    _, g, _, _ = model.explain(ds, return_heatmap=True)
+                    x_labels = args.util.growth_heatmap.x_labels
+                    heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
+                    draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
 
 
 
