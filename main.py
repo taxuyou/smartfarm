@@ -57,6 +57,9 @@ def train_step(inp, targ, model, optimizer):
 
     return loss, out
 
+def inference(inp, model):
+    out = model(inp, training=False)
+    return out
 
 def mlp_predict(args):
     ds = get_dataloader(args)
@@ -102,6 +105,7 @@ def oneshot_predict(args):
             
             if epoch % 100 == 0 or epoch == (EPOCHS - 1):
                 checkpoint.save(file_prefix=checkpoint_dir)
+                out = inference(data, model)
                 output_path = os.path.join(save_path, 'output.csv')
                 groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
                 tensor2csv(output_path, out)
