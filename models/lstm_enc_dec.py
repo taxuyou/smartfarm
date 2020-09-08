@@ -22,7 +22,11 @@ class Encoder_Decoder(keras.Model):
         self.final_lstm = keras.layers.LSTM(output_shape[2], return_sequences=True)
         self.conv2d = keras.layers.Conv2D(output_shape[3], 3, activation='relu', padding="same", input_shape=output_shape[1:2])
 
-    def call(self, x):
+    def call(self, x, training=True):
+        if training:
+            tf.keras.backend.set_learning_phase(1)
+        else:
+            tf.keras.backend.set_learning_phase(0)
         x1, x2, x3, x4 = x
 
         out1 = self.att1(x1)
