@@ -1,5 +1,5 @@
 {
-    "predict": "oneshot_predict",
+    "predict": "multi_encoder_train",
     "data":{
         "train_data":{
             "path": "./dataset/2nd_data/myeong",
@@ -16,7 +16,7 @@
 
     "model":{
         "name":"lstm_enc_dec",
-        "pretrained": false,
+        "pretrained_path": "/home/ikhee/project/EdgeAnalytics/smartfarm-1/experiments/lstm_enc_dec/ckpt",
         "config": {
             "permute": false,
             "avg": true,

@@ -65,7 +65,7 @@ def mlp_predict(args):
     ds = get_dataloader(args)
 
 
-def oneshot_predict(args):
+def multi_encoder_train(args):
     
     # get data loader - [[data], [label]]
     ds = get_dataloader(args)
@@ -136,7 +136,60 @@ def oneshot_predict(args):
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
                     draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
 
+def multi_encoder_inter(args):
+    # get data loader - [[data], [label]]
+    ds = get_dataloader(args)
+    # input parameters for lstm_inc_dec model
+    args.model.config.input_shapes = get_input_shapes(args)
+    args.model.config.output_shape = get_output_shapes(args)
 
+    save_path = args.util.save_path
+    pretrained_path = args.model.pretrained_path
+    
+    # Select device
+    with tf.device(args.device.name):
+        # model create
+        model = get_model(args)
+        # optimizer create
+        optimizer = get_optimizer(args)
+        # load weights from file
+        checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
+        checkpoint.restore(tf.train.latest_checkpoint(pretrained_path)).expect_partial()
+        # status = checkpoint.restore(tf.train.latest_checkpoint(save_path))
+        # Check all weights are mateched
+        # status.assert_consumed()
+
+        for data, targets in ds:
+            out = model(data, training=False)
+            output_path = os.path.join(save_path, 'output.csv')
+            groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
+            tensor2csv(output_path, out)
+            tensor2csv(groundtruth_path, targets)
+            harvest_path = os.path.join(save_path, 'harvest.png')
+            draw_harvest_per_sample(out, targets, harvest_path)
+
+        # Drawing heatmap and bar chart for explanation
+        if args.model.config.explain:
+            if args.model.config.env_only:
+                if args.util.env_heatmap.avail:
+                    e = model.explain(ds, return_heatmap=True)
+                    x_labels = args.util.env_heatmap.x_labels
+                    y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
+                    heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
+                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+            else:
+                if args.util.env_heatmap.avail:
+                    e, _, _, _ = model.explain(ds, return_heatmap=True)
+                    x_labels = args.util.env_heatmap.x_labels
+                    y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
+                    heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
+                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                
+                if args.util.growth_heatmap.avail:
+                    _, g, _, _ = model.explain(ds, return_heatmap=True)
+                    x_labels = args.util.growth_heatmap.x_labels
+                    heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
+                    draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
 
 def decision_tree_train(args):
     print("xgboost version:", xgb.__version__)
@@ -380,8 +433,10 @@ if __name__ =='__main__':
     check_dir()
     
     # ihshin
-    if args.predict == 'oneshot_predict':
-        oneshot_predict(args)
+    if args.predict == 'multi_encoder_train':
+        multi_encoder_train(args)
+    elif args.predict == 'multi_encoder_inter':
+        multi_encoder_inter(args)
     # yhmoon
     elif args.predict == 'rda_tomato_train' and args.model.name == 'decision_tree':       
         decision_tree_train(args)
