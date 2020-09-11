@@ -1,5 +1,5 @@
 {
-    "predict": "mlp",
+    "predict": "mlp_train",
     "data":{
         "train_data":{
             "path": "./jypark/2nd_data",
@@ -9,11 +9,11 @@
             "path": "./jypark/2nd_data",
             "names": ["harvest_label.csv", "farm_data_label.csv"]
         },
-        "num_samples": 16,
+        "num_samples": 16
     },
 
     "model":{
-        "name":"Mlp",
+        "name":"mlp",
         "pretrained": false,
         "config": {
             "permute": false,
@@ -26,7 +26,7 @@
     },
 
     "train":{
-        "epochs": 500,
+        "epochs": 5000,
         "batch": 16,
         "metric": "mse"
     },
@@ -34,14 +34,18 @@
     "optimizer":{
         "algorithm": "sgd",
         "config": {
-            "learning_rate": 0.0001,
+            "learning_rate": 0.001,
             "momentum": 0.9,
             "nesterov": true
         }
     },
 
     "util":{
-        "save_path": "exp",
+        "path": "./experiments/mlp",
+        "model": "/mlp_env2grw",
+        "first_model": "/mlp_env2grw",
+        "second_model": "/mlp_grw2pro",
+        "train_stats":"/train_stats.csv",
         "bar": {
             "avail": true,
             "name": "env_bar.png"

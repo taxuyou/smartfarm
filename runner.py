@@ -12,12 +12,26 @@ from numpy import asarray, concatenate
 import xgboost as xgb
 import pickle
 
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import tensorflow_docs as tfdocs
+import tensorflow_docs.plots
+import tensorflow_docs.modeling
+
+from utils.radar import ComplexRadar
+import json
+
 from models import *
 from utils import *
 from dataloader import *
 from optimizer import *
 
 __all__ = ['Runner']
+
+
+
 
 class Runner():
     def __init__(self, args):
@@ -34,9 +48,8 @@ class Runner():
             basic_lstm_train(self.args)
         elif self.args.predict == '2nd_tomato_train' and self.args.model.name == 'multiout_decision_tree':       
             multiout_decision_tree_train(self.args)
-        # jypark
-        # ...
-        # ...
+        elif self.args.predict == 'mlp_train':
+            mlp_train(self.args)
         else:
             raise ValueError("Wrong Predict")
     
@@ -52,10 +65,12 @@ class Runner():
         elif self.args.predict == '2nd_tomato_infer' and self.args.model.name == 'multiout_decision_tree':       
             multiout_decision_tree_infer(self.args)
         # jypark
-        # ...
+        elif self.args.predict == 'mlp_train':
+            mlp_infer(self.args)
         # ...
         else:
             raise ValueError("Wrong Predict")
+
     def run(self):
         if 'train' in self.args.predict:
             self.train()
@@ -64,8 +79,111 @@ class Runner():
         else:
             raise ValueError("Wrong Predict")
 
-def mlp_predict(args):
+def build_model(inputs, outputs):
+    from tensorflow.keras import layers
+
+    model = keras.Sequential([
+        layers.Dense(256,  activation='relu', input_shape=[inputs]),
+        layers.Dense(256, activation='relu'),
+        layers.Dense(outputs)
+    ])
+    optimizer = tf.keras.optimizers.SGD(0.01)
+    model.compile(loss='mse', optimizer=optimizer)
+    return model
+
+
+def mlp_train(args):
+    print('mlp_train')
     ds = get_dataloader(args)
+
+    # First Dataset Training
+    train_dataset = ds['first_dataset'].sample(frac=0.8,random_state=0)
+    test_dataset  = ds['first_dataset'].drop(train_dataset.index)
+
+    train_labels = train_dataset[['주간생육길이(cm)','d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','dleaf_area']].copy()
+    test_labels = test_dataset[['주간생육길이(cm)','d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','dleaf_area']].copy()
+
+    train_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
+    test_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
+
+    train_stats = train_dataset.describe()
+    train_stats = train_stats.transpose()
+
+
+    print(train_dataset.shape)
+    print(test_dataset.shape)
+
+    normed_train_data = (train_dataset - train_stats['mean']) / train_stats['std']
+    normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
+    model = build_model(len(train_dataset.keys()), len(train_labels.keys()))
+    model.summary()
+
+    history = model.fit(
+    normed_train_data.values, train_labels,
+    epochs=args.train.epochs,  validation_split = 0.2, verbose=0,callbacks=[tfdocs.modeling.EpochDots()])
+
+    exp_dir = args.util.path
+    filename = args.util.first_model
+    model.save(exp_dir + filename)
+    train_stats.to_csv(args.util.path+args.util.train_stats)  
+
+    test_dataset.to_csv(exp_dir+"/test_dataset.csv")
+    test_labels.to_csv(exp_dir+"/test_labels.csv")
+
+    mlp_infer(args)
+    return model
+
+def clip(input,ranges):
+    for col in range(len(input.columns)):
+        for row in range(len(input)):
+            if input.iloc[row,col] <= ranges[col][0]:
+                input.iloc[row,col] = ranges[col][0]
+            elif input.iloc[row,col] >= ranges[col][1]:
+                input.iloc[row,col] = ranges[col][1]
+            else:
+                input.iloc[row,col]
+    return input
+
+def mlp_infer(args):
+    print('mlp_infer')
+    ds = get_dataloader(args)
+    exp_dir = args.util.path
+    filename = args.util.model
+    train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
+
+    test_dataset = pd.read_csv(exp_dir+"/test_dataset.csv",index_col=0)
+
+    normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
+    normed_test_data = normed_test_data.dropna()
+    
+    test_labels = pd.read_csv(exp_dir + "/test_labels.csv",index_col=0)
+
+    model = build_model(len(test_dataset.keys()),len(test_labels.keys()))
+    model.load_weights(exp_dir+filename)
+
+    ypred = pd.DataFrame(model.predict(normed_test_data))
+    
+    variables = ('Grown_height(cm)', 'Thickness(mm)', 'Leaf Length(cm)', 'Leaf Width(cm)', 'Leaf Area')
+
+    max_data =(20, 11, 35, 30, 3.5) 
+    min_data =(15, 9, 25, 20, 3)
+
+    ranges = [(5, 30), (5, 15), (5, 55), (0, 50), (2.0, 4.5)]         
+    
+
+    for x in range(len(ypred)):
+        ypred= clip(ypred,ranges)
+        test_labels = clip(test_labels,ranges)
+
+        fig1 = plt.figure(figsize=(6, 6))
+        radar = ComplexRadar(fig1, variables, ranges)
+        radar.fill(max_data,'g')
+        radar.fill(min_data,color='w')
+        radar.plot(ypred.iloc[x],'r')
+        radar.plot(test_labels.iloc[x],'b')
+        
+        plt.savefig(exp_dir+"/growth_images/pred"+str(x)+".png")
+
 
 
 def multi_encoder_train(args):

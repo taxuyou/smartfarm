@@ -21,6 +21,11 @@ def get_dataloader(args):
     elif name == 'basic_lstm':
         from .rda_dataloader import get_bl_dataset
         dataloader = get_bl_dataset(args)
+        
+
+    elif name == 'mlp':
+        from .mlp_dataloader import mlp_dataloader
+        dataloader = mlp_dataloader(args)
 
     else:
         raise ValueError(args.model.name)

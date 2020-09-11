@@ -23,7 +23,7 @@ def check_env():
 
 
 def check_dir():
-    exp_dir = ['./experiments', './experiments/rda_decision_tree', './experiments/rda_basic_lstm']
+    exp_dir = ['./experiments', './experiments/rda_decision_tree', './experiments/rda_basic_lstm','./experiments/mlp']
     def check(dirs):
         for i in range(len(dirs)):
             try:
