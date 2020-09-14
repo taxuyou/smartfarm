@@ -55,11 +55,11 @@ class Runner():
     
     def infer(self):
         # ihshin
-        if self.args.predict == 'multi_encoder_inter':
-            multi_encoder_inter(self.args)
+        if self.args.predict == 'multi_encoder_infer':
+            multi_encoder_infer(self.args)
         # yhmoon
         elif self.args.predict == 'rda_tomato_infer' and self.args.model.name == 'decision_tree':       
-            decision_tree_infer(args)
+            decision_tree_infer(self.args)
         elif self.args.predict == 'rda_tomato_infer' and self.args.model.name == 'basic_lstm':  
             basic_lstm_infer(self.args)
         elif self.args.predict == '2nd_tomato_infer' and self.args.model.name == 'multiout_decision_tree':       
@@ -260,6 +260,8 @@ def multi_encoder_train(args):
 
     # get data loader - [[data], [label]]
     ds = get_dataloader(args)
+    train_ds = ds[:-3]
+    test_ds = ds[-2:-1]
     # input parameters for lstm_inc_dec model
     args.model.config.input_shapes = get_input_shapes(args)
     args.model.config.output_shape = get_output_shapes(args)
@@ -285,7 +287,7 @@ def multi_encoder_train(args):
         for epoch in range(EPOCHS):
             train_loss.reset_states()
 
-            for data, targets in ds:
+            for data, targets in train_ds:
                 loss, out = train_step(data, targets, model, optimizer)
 
                 train_loss(loss)
@@ -296,38 +298,39 @@ def multi_encoder_train(args):
             
             if epoch % 100 == 0 or epoch == (EPOCHS - 1):
                 checkpoint.save(file_prefix=checkpoint_dir)
-                out = inference(data, model)
+                test_data, test_targets = test_ds[-1]
+                out = inference(test_data, model)
                 output_path = os.path.join(save_path, 'output.csv')
                 groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
                 tensor2csv(output_path, out)
-                tensor2csv(groundtruth_path, targets)
+                tensor2csv(groundtruth_path, test_targets)
                 harvest_path = os.path.join(save_path, 'harvest.png')
-                draw_harvest_per_sample(out, targets, harvest_path)
+                draw_harvest_per_sample(out, test_targets, harvest_path)
         
         # Drawing heatmap and bar chart for explanation
         if args.model.config.explain:
             if args.model.config.env_only:
                 if args.util.env_heatmap.avail:
-                    e = model.explain(ds, return_heatmap=True)
+                    e = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
                     draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
             else:
                 if args.util.env_heatmap.avail:
-                    e, _, _, _ = model.explain(ds, return_heatmap=True)
+                    e, _, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
                     draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
                 
                 if args.util.growth_heatmap.avail:
-                    _, g, _, _ = model.explain(ds, return_heatmap=True)
+                    _, g, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
                     draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
 
-def multi_encoder_inter(args):
+def multi_encoder_infer(args):
     # get data loader - [[data], [label]]
     ds = get_dataloader(args)
     # input parameters for lstm_inc_dec model
