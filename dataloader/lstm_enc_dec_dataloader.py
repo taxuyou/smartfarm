@@ -18,7 +18,7 @@ def dataloader4lstm_enc_dec(args):
         sheet_df = pd.read_excel(df, 'Sheet1')
 
         if '초장(cm)' in sheet_df.columns:
-            data = df2numpy(sheet_df, 1, offset=args.data.num_samples, dropkey=['주차'])[:args.data.num_data]
+            data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['주차'])[:args.data.num_data]
         elif '샘플번호' in sheet_df.columns:
             data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['날짜', '샘플번호'])[:args.data.num_data]
         else:

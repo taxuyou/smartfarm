@@ -21,6 +21,8 @@ class Encoder_Decoder(keras.Model):
         # decoder
         self.final_lstm = keras.layers.LSTM(output_shape[2], return_sequences=True)
         self.conv2d = keras.layers.Conv2D(output_shape[3], 3, activation='relu', padding="same", input_shape=output_shape[1:2])
+        # self.inputs = tf.constant(input_shapes)
+        # self.outputs = tf.constant(output_shape)
 
     def call(self, x, training=True):
         if training:
@@ -40,18 +42,18 @@ class Encoder_Decoder(keras.Model):
         out4 = self.lstm4(out4)
 
         shape1 = out1.shape
-        out1 = tf.reshape(out1, [shape1[0], shape1[1], 1])
+        out1 = tf.reshape(out1, [-1, shape1[1], 1])
         shape2 = out2.shape
-        out2 = tf.reshape(out2, [shape2[0], shape2[1], 1])
+        out2 = tf.reshape(out2, [-1, shape2[1], 1])
         shape3 = out3.shape
-        out3 = tf.reshape(out3, [shape3[0], shape3[1], 1])
+        out3 = tf.reshape(out3, [-1, shape3[1], 1])
         shape4 = out4.shape
-        out4 = tf.reshape(out4, [shape4[0], shape4[1], 1])
+        out4 = tf.reshape(out4, [-1, shape4[1], 1])
 
         out = tf.concat([out1, out2, out3, out4], axis=2)
         out = self.final_lstm(out)
         out_shape = out.shape
-        out = tf.reshape(out, [out_shape[0], out_shape[1], out_shape[2], 1])
+        out = tf.reshape(out, [-1, out_shape[1], out_shape[2], 1])
         
         out = self.conv2d(out)
 

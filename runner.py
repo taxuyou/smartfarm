@@ -16,9 +16,7 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import tensorflow_docs as tfdocs
-import tensorflow_docs.plots
-import tensorflow_docs.modeling
+import shap
 
 from utils.radar import ComplexRadar
 import json
@@ -65,7 +63,7 @@ class Runner():
         elif self.args.predict == '2nd_tomato_infer' and self.args.model.name == 'multiout_decision_tree':       
             multiout_decision_tree_infer(self.args)
         # jypark
-        elif self.args.predict == 'mlp_train':
+        elif self.args.predict == 'mlp_infer':
             mlp_infer(self.args)
         # ...
         else:
@@ -327,8 +325,29 @@ def multi_encoder_train(args):
                 if args.util.growth_heatmap.avail:
                     _, g, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
+                    y_labels = [str(i) for i in range(1, args.data.num_samples+1)]
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
-                    draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
+                    draw_heatmap(heatmap=g, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                # shap test
+                # tf.compat.v1.disable_eager_execution()
+                # tf.compat.v1.disable_v2_behavior()
+                # print(args.model.config.input_shapes, args.model.config.output_shape)
+                # input_1, input_2, input_3, input_4 = args.model.config.input_shapes
+                # input_layer_1 = tf.keras.layers.Input(shape=(input_1[1], input_1[2]))
+                # input_layer_2 = tf.keras.layers.Input(shape=(input_2[1], input_2[2]))
+                # input_layer_3 = tf.keras.layers.Input(shape=(input_3[1], input_3[2]))
+                # input_layer_4 = tf.keras.layers.Input(shape=(input_4[1], input_4[2]))
+                # new_model_input = [input_layer_1, input_layer_2, input_layer_3, input_layer_4]
+                # new_model_output = model(new_model_input)
+                # new_model_output = tf.reshape(new_model_output, [args.model.config.output_shape[1], args.model.config.output_shape[2]])
+                # new_model = tf.keras.models.Model(inputs=new_model_input, outputs=new_model_output)
+                # print(new_model_output.shape)
+                # background = [data for data, target in train_ds]
+                # explain = shap.DeepExplainer(new_model, background)
+                # # explain = shap.DeepExplainer((model.inputs, model.outputs), background)
+                # test_sample = [data for data, target in test_ds]
+                # shap_values = e.shap_values(test_sample)
+                # print(shap_values)
 
 def multi_encoder_infer(args):
     # get data loader - [[data], [label]]
