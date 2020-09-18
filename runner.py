@@ -16,7 +16,7 @@ import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import shap
+# import shap
 
 from utils.radar import ComplexRadar
 import json
@@ -348,6 +348,9 @@ def multi_encoder_train(args):
                 # test_sample = [data for data, target in test_ds]
                 # shap_values = e.shap_values(test_sample)
                 # print(shap_values)
+                # background = [data for data, target in train_ds]
+                # test_sample = [data for data, target in test_ds]
+                # shap_values = FI_by_shap(input_shape=args.model.config.input_shapes, model=model, background=background, test=test_sample)
 
 def multi_encoder_infer(args):
     # get data loader - [[data], [label]]
@@ -630,3 +633,41 @@ def multiout_decision_tree_train(args):
 
 def multiout_decision_tree_train(args):   
     pass
+
+# def FI_by_shap(input_shape, model, background, test):
+    
+#     sub_models = []
+#     for idx, shape in enumerate(input_shape):
+#         l = tf.keras.layers.Input(shape=(shape[1], shape[2]))
+#         att, lstm = model.get_encoder_by_idx(index=idx)
+#         z = att(l)
+#         z = lstm(z)
+#         new_model = tf.keras.models.Model(inputs=l, outputs=z)
+#         sub_models.append(new_model)
+
+#     b_e, b_g, b_p1, b_p2 = [], [], [], []
+#     for b in background:
+#         e, g, p1, p2 = b
+#         b_e.append(e)
+#         b_g.append(g)
+#         b_p1.append(p1)
+#         b_p2.append(p2)
+    
+#     t_e, t_g, t_p1, t_p2 = [], [], [], []
+#     for t in test:
+#         e, g, p1, p2 = t
+#         t_e.append(e)
+#         t_g.append(g)
+#         t_p1.append(p1)
+#         t_p2.append(p2)
+
+#     bg_split = [b_e, b_g, b_p1, b_p2]
+#     test_split = [t_e, t_g, t_p1, t_p2]
+
+#     shap_value_list = []
+#     for m, b, t in zip(sub_models, bg_split, test_split):
+#         explain = shap.DeepExplainer(m, b)
+#         shap_values = explain.shap_values(t)
+#         shap_value_list.append(shap_values)
+    
+#     return shap_value_list
