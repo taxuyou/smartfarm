@@ -101,6 +101,18 @@ class Encoder_Decoder(keras.Model):
 
         return env_att_final, growth_att_final, product1_att_final, product2_att_final
 
+    # def get_encoder_by_idx(self, index=0):
+    #     if index == 0:
+    #         return self.att1, self.lstm1
+    #     elif index == 1:
+    #         return self.att2, self.lstm2
+    #     elif index == 2:
+    #         return self.att3, self.lstm3
+    #     elif index == 3:
+    #         return self.att4, self.lstm4
+    #     else:
+    #         raise ValueError(index)
+
 class Encoder_Decoder_Env(keras.Model):
     def __init__(self, input_shapes, output_shape, permute=True):
         super(Encoder_Decoder_Env, self).__init__()
