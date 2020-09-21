@@ -72,8 +72,6 @@ def suitable_info(df=None):
     if df is None:
         raise ValueError(df)
     
-    suitable_temp = df[(df['실내온도'] >= 18) & (df['실내온도'] <= 20)]
-    
     suitable_humid = df[(df['실내습도'] >= 65) & (df['실내습도'] <= 85)]
     
     day_temp_lowerbound = df['실내온도'].min() - 16
@@ -85,11 +83,11 @@ def suitable_info(df=None):
     sunset = df[(df['시간'] >= 180000) & (df['시간'] <= 200000)]
     sunset_diff = sunset['실내온도'].max() - sunset['실내온도'].min()
     
-    suitable_list = [len(suitable_temp)/60, len(suitable_humid)/60, sunrise_diff, sunset_diff, 
+    suitable_list = [len(suitable_humid)/60, sunrise_diff, sunset_diff, 
                      day_temp_lowerbound, day_temp_upperbound]
     
     suitable = pd.DataFrame([suitable_list])
-    suitable.columns = ['suitable_temperature_time', 'suitable_humidity_time', 'sunrise_diff', 'sunset_diff',
+    suitable.columns = ['suitable_humidity_time', 'sunrise_diff', 'sunset_diff',
                        'suitable_temperature_diff_lowerbound', 'suitable_temperature_diff_upperbound']
     return suitable
 
@@ -150,6 +148,7 @@ def env_data_preprocessing(args):
 
     avg_env_df = avg_env_df.reset_index()
     avg_env_df = avg_env_df.drop(columns=['index'])
+    avg_env_df = avg_env_df.interpolate()
     avg_env_df = avg_env_df.drop(columns=['날짜_std', '날짜_min', '날짜_max', '시간', '시간_std', '시간_min', '시간_max'])
     avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
