@@ -57,7 +57,7 @@
                 "v (specific volume)_max", "rho (density)_max", "pw (Partial pressure) water vapor_max", "Absolute Humidity (AH)_max", "absoluteAH_max", 
                 "am_suitable_HD", "sun_suitable_HD", "day_suitable_HD", "pm_unsuitable_HD", "am_unsuitable_HD",
                 "low_temperature", "high_temperature", "suitable_temperature", "daytime_temperature", "nighttime_temperature", "afternoon_temperature",
-                "suitable_temperature_time", "suitable_humidity_time", "sunrise_diff", "sunset_diff", "suitable_temperature_diff_lowerbound",
+                "suitable_humidity_time", "sunrise_diff", "sunset_diff", "suitable_temperature_diff_lowerbound",
                 "suitable_temperature_diff_upperbound"]
         },
         "growth_heatmap": {

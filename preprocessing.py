@@ -148,6 +148,7 @@ def env_data_preprocessing(args):
 
     avg_env_df = avg_env_df.reset_index()
     avg_env_df = avg_env_df.drop(columns=['index'])
+    avg_env_df = avg_env_df.interpolate()
     avg_env_df = avg_env_df.drop(columns=['날짜_std', '날짜_min', '날짜_max', '시간', '시간_std', '시간_min', '시간_max'])
     avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
