@@ -30,7 +30,7 @@ def get_input_shapes(args):
         sheet_df = pd.read_excel(df, 'Sheet1')
         
         if '초장(cm)' in sheet_df.columns:
-            data = df2numpy(sheet_df, args.data.num_samples, offset=1, dropkey=['주차'])[:args.data.num_data]
+            data = df2numpy(sheet_df, args.data.num_samples, offset=1, dropkey=['날짜'])[:args.data.num_data]
         elif '샘플번호' in sheet_df.columns:
             data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['날짜', '샘플번호'])[:args.data.num_data]
         else:

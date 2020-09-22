@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 import xgboost as xgb
 import tensorflow as tf
+import plotly.graph_objects as go
 
 
 __all__ = ['draw_heatmap', 'draw_bargraph', 'draw_harvest_per_sample',
@@ -15,29 +17,45 @@ __all__ = ['draw_heatmap', 'draw_bargraph', 'draw_harvest_per_sample',
 '''
 plot one shot
 '''
-def draw_heatmap(heatmap, x_labels, y_labels, filename):
+def draw_heatmap(heatmap, filename, x_labels, y_labels):
 
-    plt.figure()
-    res = sns.heatmap(data=heatmap, linewidth=0.5, xticklabels=x_labels, yticklabels=y_labels, cmap='YlGnBu')
-    res.set_xticklabels(res.get_xmajorticklabels(), fontsize=6)
-    res.set_yticklabels(res.get_ymajorticklabels(), fontsize=6)
-    plt.title(filename)
-    plt.tight_layout()
-    plt.savefig(filename)
+    # plt.figure()
+    # res = sns.heatmap(data=heatmap, linewidth=0.5, xticklabels=x_labels, yticklabels=y_labels, cmap='YlGnBu')
+    # res.set_xticklabels(res.get_xmajorticklabels(), fontsize=6)
+    # res.set_yticklabels(res.get_ymajorticklabels(), fontsize=6)
+    # plt.title(filename)
+    # plt.tight_layout()
+    # plt.savefig(filename)
+    fig = go.Figure(data=go.Heatmap(z=heatmap, x=x_labels, y=y_labels, hoverongaps=False))
+    fig.write_image(filename)
 
 
-def draw_bargraph(data, filename, x_labels=None, reverse_index=False):
-    if reverse_index:
-        index = [i for i in range(len(data), 0, -1)]
-    else:
-        index = np.arange(len(data))
-    plt.figure()
-    plt.bar(index, data)
-    plt.title(filename)
-    if x_labels is not None:
-        plt.xticks(index, x_labels, rotation=90)
-    plt.tight_layout()
-    plt.savefig(filename)
+def draw_bargraph(data, filename, x_labels=None):
+    avg_data = np.mean(data, axis=0)
+    df = pd.DataFrame(avg_data).T
+    df.columns = x_labels
+    df.sort_values(by=0, ascending=False, axis=1, inplace=True)
+
+    drop_columns = []
+    for c in df.columns:
+        if not df[c][0] > 0:
+            drop_columns.append(c)
+    df = df.drop(columns=drop_columns)
+
+    # plt.figure(figsize=(15, 5))
+    # plt.rcParams['font.family'] = 'NanumGothic'
+    # splot = sns.barplot(data=df)
+
+    # for p in splot.patches:
+    #     splot.annotate(format(p.get_height(), '.4f'), (p.get_x() + p.get_width() / 2., p.get_height()),ha='center', va='center', xytext=(0, 9), textcoords='offset points')
+    # splot.set_xticklabels(splot.get_xticklabels(), rotation=90)
+    # plt.title(filename)
+    # plt.tight_layout()
+    # plt.savefig(filename)
+    # fig = px.bar(df)
+    fig = go.Figure(data=[go.Bar(x=df.columns, y=df.values[0])])
+    fig.update_traces(textposition='outside')
+    fig.write_image(filename)
 
 def autolabel(ax, rects, xpos='center'):
     ha = {'center':'center', 'right':'left', 'left':'right'}

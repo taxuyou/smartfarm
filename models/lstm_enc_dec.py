@@ -85,7 +85,7 @@ class Encoder_Decoder(keras.Model):
                 dols4 = np.array(att4).squeeze()
             else:
                 dols1 = np.mean(att1, axis=2).squeeze()
-                dols2 = np.mean(att2, axis=1).squeeze()
+                dols2 = np.mean(att2, axis=2).squeeze()
                 dols3 = np.mean(att3, axis=2).squeeze()
                 dols4 = np.mean(att4, axis=2).squeeze()
 

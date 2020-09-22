@@ -252,17 +252,27 @@ def multi_encoder_train(args):
 
         return loss, out
 
-    def inference(inp, model):
+    def inference(inp, targ, model):
+        test_loss = keras.metrics.Mean(name="test_loss")
         out = model(inp, training=False)
+        loss = keras.losses.mean_squared_error(targ, out)
+        test_loss(loss)
+
+        template = 'Test Loss: {}'
+        print(template.format(test_loss.result()))
+
         return out
 
     # get data loader - [[data], [label]]
-    ds = get_dataloader(args)
+    ds, input_shapes, output_shape = get_dataloader(args)
+    print("input and output shape")
+    print(input_shapes, output_shape)
+    print("="*20)
     train_ds = ds[:-3]
     test_ds = ds[-2:-1]
     # input parameters for lstm_inc_dec model
-    args.model.config.input_shapes = get_input_shapes(args)
-    args.model.config.output_shape = get_output_shapes(args)
+    args.model.config.input_shapes = input_shapes
+    args.model.config.output_shape = output_shape
 
     save_path = args.util.save_path
     
@@ -297,7 +307,7 @@ def multi_encoder_train(args):
             if epoch % 100 == 0 or epoch == (EPOCHS - 1):
                 checkpoint.save(file_prefix=checkpoint_dir)
                 test_data, test_targets = test_ds[-1]
-                out = inference(test_data, model)
+                out = inference(test_data, test_targets, model)
                 output_path = os.path.join(save_path, 'output.csv')
                 groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
                 tensor2csv(output_path, out)
@@ -313,21 +323,26 @@ def multi_encoder_train(args):
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
             else:
+                e, g, _, _ = model.explain(test_ds, return_heatmap=True)
                 if args.util.env_heatmap.avail:
-                    e, _, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.env_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=e, filename=bar_path, x_labels=x_labels)
                 
                 if args.util.growth_heatmap.avail:
-                    _, g, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
                     y_labels = [str(i) for i in range(1, args.data.num_samples+1)]
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
-                    draw_heatmap(heatmap=g, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=g, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.growth_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=g, filename=bar_path, x_labels=x_labels)
                 # shap test
                 # tf.compat.v1.disable_eager_execution()
                 # tf.compat.v1.disable_v2_behavior()
@@ -389,20 +404,26 @@ def multi_encoder_infer(args):
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
             else:
+                e, g, _, _ = model.explain(ds, return_heatmap=True)
                 if args.util.env_heatmap.avail:
-                    e, _, _, _ = model.explain(ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.env_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=e, filename=bar_path, x_labels=x_labels)
                 
                 if args.util.growth_heatmap.avail:
-                    _, g, _, _ = model.explain(ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
+                    y_labels = [str(i) for i in range(1, args.data.num_samples+1)]
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
                     draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
+                    bar_name = "bar_" + args.util.growth_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=g, filename=bar_path, x_labels=x_labels)
 
 def decision_tree_train(args):
     print("xgboost version:", xgb.__version__)
