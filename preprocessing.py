@@ -29,7 +29,7 @@ def HD_cumulative_time(df=None):
                           len(pm_unsuitable_df)/60, len(am_unsuitable_df)/60]
     
     HD = pd.DataFrame([HD_cumulative_list])
-    HD.columns = ['am_suitable_HD', 'sun_suitable_HD', 'day_suitable_HD', 'pm_unsuitable_HD', 'am_unsuitable_HD']
+    HD.columns = ['오전적정증산(HD)누적시간', '일출일몰적정증산(HD)누적시간', '하루적정증산(HD)누적시간', '오후심각증산(HD)누적시간', '오전심각증산(HD)누적시간']
     
     return HD
 
@@ -45,7 +45,7 @@ def temperature_cumulative_time(df=None):
     temp_cumulative_list = [len(low_temp_df)/60, len(high_temp_df)/60, len(suitable_df)/60]
     
     temp = pd.DataFrame([temp_cumulative_list])
-    temp.columns = ['low_temperature', 'high_temperature', 'suitable_temperature']
+    temp.columns = ['12도이하온도누적시간', '30도이상온도누적시간', '적정온도누적시간']
     
     return temp
 
@@ -64,7 +64,7 @@ def temperature_average(df=None):
     
     temp_avg_list = [daytime_temp, nighttime_temp, afternoon_temp]
     temp = pd.DataFrame([temp_avg_list])
-    temp.columns = ['daytime_temperature', 'nighttime_temperature', 'afternoon_temperature']
+    temp.columns = ['주간평균온도', '야간평균온도', '오후부터일몰까지평균온도']
     
     return temp
 
@@ -87,8 +87,8 @@ def suitable_info(df=None):
                      day_temp_lowerbound, day_temp_upperbound]
     
     suitable = pd.DataFrame([suitable_list])
-    suitable.columns = ['suitable_humidity_time', 'sunrise_diff', 'sunset_diff',
-                       'suitable_temperature_diff_lowerbound', 'suitable_temperature_diff_upperbound']
+    suitable.columns = ['적정습도누적시간', '일출전후한시간평균온도', '일몰전후한시간평균온도',
+                       '적정온도변화폭(하위)', '적정온도변화폭(상위)']
     return suitable
 
 def env_data_preprocessing(args):
@@ -114,23 +114,24 @@ def env_data_preprocessing(args):
     new_env_df = new_env_df.dropna(axis=0)
     new_env_df['시간'] = new_env_df['시간'].astype(float)
 
-    headers = ['날짜', '시간','실내온도', '실내습도', 'dew point (Td)', 'HD', 'atmospheric pressure',
-       'pws', 'W (moisture content)', 'h (enthalpy)', 'v (specific volume)',
-       'rho (density)', 'pw (Partial pressure) water vapor', 'Absolute Humidity (AH)', 'absoluteAH']
+    headers = ['날짜', '시간','실내온도', '실내습도', '이슬점(Td)', '증산(HD)', '대기압',
+       'PWS(?)', '수분량', '엔탈피', '비부피',
+       '밀도', 'PW(?)수증기', '절대습도', '절대AH(?)']
 
     std_headers = []
     min_headers = []
     max_headers = []
 
     for h in headers:
-        std_headers += [h + '_std']
-        min_headers += [h + '_min']
-        max_headers += [h + '_max']
+        std_headers += [h + '표준편차']
+        min_headers += ['최소' + h]
+        max_headers += ['최대' + h]
 
     avg_env_df = pd.DataFrame()
 
     for u in new_env_df['날짜'].unique():
         a = new_env_df[new_env_df['날짜'] == u].mean().to_frame().T
+        a.columns = headers
         s = new_env_df[new_env_df['날짜'] == u].std().to_frame().T
         s.columns = std_headers
         min_ = new_env_df[new_env_df['날짜'] == u].min().to_frame().T
@@ -149,7 +150,7 @@ def env_data_preprocessing(args):
     avg_env_df = avg_env_df.reset_index()
     avg_env_df = avg_env_df.drop(columns=['index'])
     avg_env_df = avg_env_df.interpolate()
-    avg_env_df = avg_env_df.drop(columns=['날짜_std', '날짜_min', '날짜_max', '시간', '시간_std', '시간_min', '시간_max'])
+    avg_env_df = avg_env_df.drop(columns=['날짜표준편차', '최소날짜', '최대날짜', '시간', '시간표준편차', '최소시간', '최대시간'])
     avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
 def growth_data_preprocessing(args):
@@ -161,47 +162,47 @@ def growth_data_preprocessing(args):
     df = pd.ExcelFile(file_path)
     growth_df = pd.read_excel(df, 'Sheet1')
     
-    growth_df['leaf_area'] = growth_df['잎길이(cm)'] * growth_df['잎폭(cm)'] * growth_df['잎수(개)'] * (args.growth.planted_hills / args.growth.farm_area) * 0.6 / 10000
+    growth_df['엽면적지수'] = growth_df['잎길이(cm)'] * growth_df['잎폭(cm)'] * growth_df['잎수(개)'] * (args.growth.planted_hills / args.growth.farm_area) * 0.6 / 10000
 
-    growth_df['suitable_growth_length'] = 0
-    growth_df.loc[growth_df['주간생육길이(cm)'] < 15, 'suitable_growth_length'] = -1
-    growth_df.loc[growth_df['주간생육길이(cm)'] > 20, 'suitable_growth_length'] = 1
+    growth_df['주간생육길이_생육상태'] = 0
+    growth_df.loc[growth_df['주간생육길이(cm)'] < 15, '주간생육길이_생육상태'] = -1
+    growth_df.loc[growth_df['주간생육길이(cm)'] > 20, '주간생육길이_생육상태'] = 1
 
-    growth_df['suitable_thickness'] = 0
-    growth_df.loc[growth_df['줄기굵기(mm)'] < 9, 'suitable_thickness'] = -1
-    growth_df.loc[growth_df['줄기굵기(mm)'] > 11, 'suitable_thickness'] = 1
+    growth_df['줄기굵기_생육상태'] = 0
+    growth_df.loc[growth_df['줄기굵기(mm)'] < 9, '줄기굵기_생육상태'] = -1
+    growth_df.loc[growth_df['줄기굵기(mm)'] > 11, '줄기굵기_생육상태'] = 1
 
-    growth_df['suitable_leaf_length'] = 0
-    growth_df.loc[growth_df['잎길이(cm)'] < 25, 'suitable_leaf_length'] = -1
-    growth_df.loc[growth_df['잎길이(cm)'] > 35, 'suitable_leaf_length'] = 1
+    growth_df['잎길이_생육상태'] = 0
+    growth_df.loc[growth_df['잎길이(cm)'] < 25, '잎길이_생육상태'] = -1
+    growth_df.loc[growth_df['잎길이(cm)'] > 35, '잎길이_생육상태'] = 1
 
-    growth_df['suitable_leaf_width'] = 0
-    growth_df.loc[growth_df['잎폭(cm)'] < 20, 'suitable_leaf_width'] = -1
-    growth_df.loc[growth_df['잎폭(cm)'] > 30, 'suitable_leaf_width'] = 1
+    growth_df['입폭_생육상태'] = 0
+    growth_df.loc[growth_df['잎폭(cm)'] < 20, '입폭_생육상태'] = -1
+    growth_df.loc[growth_df['잎폭(cm)'] > 30, '입폭_생육상태'] = 1
 
-    growth_df['suitable_number_of_leaf'] = 0
-    growth_df.loc[growth_df['잎수(개)'] < 10, 'suitable_number_of_leaf'] = -1
-    growth_df.loc[growth_df['잎수(개)'] > 15, 'suitable_number_of_leaf'] = 1
+    growth_df['입수_생육상태'] = 0
+    growth_df.loc[growth_df['잎수(개)'] < 10, '입수_생육상태'] = -1
+    growth_df.loc[growth_df['잎수(개)'] > 15, '입수_생육상태'] = 1
 
-    growth_df['suitable_leaf_area'] = 0
-    growth_df.loc[growth_df['leaf_area'] < 3, 'suitable_leaf_area'] = -1
-    growth_df.loc[growth_df['leaf_area'] > 3.5, 'suitable_leaf_area'] = 1
+    growth_df['엽면적지수_생육상태'] = 0
+    growth_df.loc[growth_df['엽면적지수'] < 3, '엽면적지수_생육상태'] = -1
+    growth_df.loc[growth_df['엽면적지수'] > 3.5, '엽면적지수_생육상태'] = 1
 
-    growth_df['suitable_flower_room'] = 0
-    growth_df.loc[growth_df['개화화방위치(cm)'] < 10, 'suitable_flower_room'] = -1
-    growth_df.loc[growth_df['개화화방위치(cm)'] > 15, 'suitable_flower_room'] = 1
+    growth_df['개화화방위치_생육상태'] = 0
+    growth_df.loc[growth_df['개화화방위치(cm)'] < 10, '개화화방위치_생육상태'] = -1
+    growth_df.loc[growth_df['개화화방위치(cm)'] > 15, '개화화방위치_생육상태'] = 1
 
-    growth_df['suitable_flower_distance'] = 0
-    growth_df.loc[growth_df['꽃과 줄기거리(cm)'] < 3, 'suitable_flower_distance'] = -1
-    growth_df.loc[growth_df['꽃과 줄기거리(cm)'] > 4, 'suitable_flower_distance'] = 1
+    growth_df['꽃과줄기거리_생육상태'] = 0
+    growth_df.loc[growth_df['꽃과 줄기거리(cm)'] < 3, '꽃과줄기거리_생육상태'] = -1
+    growth_df.loc[growth_df['꽃과 줄기거리(cm)'] > 4, '꽃과줄기거리_생육상태'] = 1
 
-    growth_df['growth_type_score'] = growth_df['suitable_growth_length'] + growth_df['suitable_thickness'] + \
-                                    growth_df['suitable_leaf_length'] + growth_df['suitable_leaf_width'] + \
-                                    growth_df['suitable_number_of_leaf'] + growth_df['suitable_leaf_area'] + \
-                                    growth_df['suitable_flower_room'] + growth_df['suitable_flower_distance']
-    growth_df['growth_type'] = 0
-    growth_df.loc[growth_df['growth_type_score'] < 0, 'growth_type'] = -1
-    growth_df.loc[growth_df['growth_type_score'] > 0, 'growth_type'] = 1
+    growth_df['생육상태점수'] = growth_df['주간생육길이_생육상태'] + growth_df['주간생육길이_생육상태'] + \
+                            growth_df['잎길이_생육상태'] + growth_df['입폭_생육상태'] + \
+                            growth_df['입수_생육상태'] + growth_df['엽면적지수_생육상태'] + \
+                            growth_df['개화화방위치_생육상태'] + growth_df['꽃과줄기거리_생육상태']
+    growth_df['생장구분'] = 0
+    growth_df.loc[growth_df['생육상태점수'] < 0, '생장구분'] = -1
+    growth_df.loc[growth_df['생육상태점수'] > 0, '생장구분'] = 1
 
     growth_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
