@@ -5,7 +5,7 @@ from tensorflow import keras
 from .attention import Attention
 
 class Encoder_Decoder(keras.Model):
-    def __init__(self, input_shapes, output_shape, permute=True):
+    def __init__(self, input_shapes, output_shape, permute=False):
         super(Encoder_Decoder, self).__init__()
         # lstm encoder
         self.att1 = Attention(input_shapes[0], permute)
@@ -114,7 +114,7 @@ class Encoder_Decoder(keras.Model):
     #         raise ValueError(index)
 
 class Encoder_Decoder_Env(keras.Model):
-    def __init__(self, input_shapes, output_shape, permute=True):
+    def __init__(self, input_shapes, output_shape, permute=False):
         super(Encoder_Decoder_Env, self).__init__()
         # lstm encoder
         self.att1 = Attention(input_shapes[0], permute)

@@ -12,13 +12,11 @@ def get_model(args, config=None):
         if args.model.config.env_only:
             from .lstm_enc_dec import Encoder_Decoder_Env
             model = Encoder_Decoder_Env(input_shapes=args.model.config.input_shapes, 
-                                        output_shape=args.model.config.output_shape, 
-                                        permute=args.model.config.permute)
+                                        output_shape=args.model.config.output_shape)
         else:
             from .lstm_enc_dec import Encoder_Decoder
             model = Encoder_Decoder(input_shapes=args.model.config.input_shapes, 
-                                    output_shape=args.model.config.output_shape, 
-                                    permute=args.model.config.permute)
+                                    output_shape=args.model.config.output_shape)
     
     elif name == 'decision_tree':
         from .decision_tree import get_decision_tree_model
