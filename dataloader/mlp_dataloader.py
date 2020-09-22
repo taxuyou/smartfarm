@@ -8,41 +8,31 @@ import tensorflow as tf
 __all__ = ['mlp_dataloader']
 
 def mlp_dataloader(args):
-    train_data_list = []
-    
-    path = args.data.train_data.path
-    growth = args.data.train_data.growth
-    env = args.data.train_data.env
-    product_1 = args.data.train_data.product_1
-    product_2 = args.data.train_data.product_2
-    product_3 = args.data.train_data.product_3
-    product_4 = args.data.train_data.product_4
-
+    path = args.directory
     mode = args.target
-    dataset = []
-    ############################################################################
-    # Read Data from datapaths (Growth, Env, Product)
-    ############################################################################
-
     
-
-    df_grw = pd.read_excel(path + growth)
-
-    df_grw['날짜'] = df_grw.apply(
-        lambda row: int('2018'+row['주차'].split('(')[1].replace(')','').replace('/','')),axis=1)
-    df_grww = df_grw.copy()
-
-    # Preprocess Growth Data
-    grw_date = df_grw['날짜'].unique()
-    grw_date = pd.DataFrame(grw_date)
-
-    df_grw = df_grw.set_index(['샘플번호','날짜'])
-    df_grw = df_grw.sort_index()
-    df_grw = df_grw.reindex(columns=['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','leaf_area'])
-
-
     if mode == "product":
+        print("target: product")
+        grw = args.train_data.grw
+        product_1 = args.data.train_data.product_1
+        product_2 = args.data.train_data.product_2
+        product_3 = args.data.train_data.product_3
+        product_4 = args.data.train_data.product_4
+        
+        df_grw = pd.read_excel(path+grw)
+        df_grw['날짜'] = df_grw.apply(
+            lambda row: int('2018'+row['주차'].split('(')[1].replace(')','').replace('/','')),axis=1)
+        df_grww = df_grw.copy()
 
+        # Preprocess Growth Data
+        grw_date = df_grw['날짜'].unique()
+        grw_date = pd.DataFrame(grw_date)
+
+        df_grw = df_grw.set_index(['샘플번호','날짜'])
+        df_grw = df_grw.sort_index()
+        df_grw = df_grw.reindex(columns=['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','leaf_area'])
+
+        
         df_p1 = pd.read_excel(path + product_1)
         df_p1['날짜'] = df_p1.apply(lambda row: int(row['날짜'].strftime('%Y%m%d')),axis=1)
         df_p1.drop(df_p1.index[df_p1['샘플번호'] == '2-4-10-9'])
@@ -80,8 +70,24 @@ def mlp_dataloader(args):
         df_label = pd.concat([df_p1.reset_index(drop=True),df_p2.reset_index(drop=True),df_p3.reset_index(drop=True),df_p4.reset_index(drop=True)],axis=1)
         dataset = pd.concat([df_grw.reset_index(drop=True),df_label.reset_index(drop=True)], axis=1)\
 
-    else: # Growth mode
-        # Process Growth label for growth mode
+    else:
+        print("target: growth")
+        grw = args.train_data.grw
+        env = args.train_data.env
+
+        df_grw = pd.read_excel(path+grw)
+        df_grw['날짜'] = df_grw.apply(
+            lambda row: int('2018'+row['주차'].split('(')[1].replace(')','').replace('/','')),axis=1)
+        df_grww = df_grw.copy()
+
+        # Preprocess Growth Data
+        grw_date = df_grw['날짜'].unique()
+        grw_date = pd.DataFrame(grw_date)
+
+        df_grw = df_grw.set_index(['샘플번호','날짜'])
+        df_grw = df_grw.sort_index()
+        df_grw = df_grw.reindex(columns=['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','leaf_area'])
+
         for [samp,date],rows in df_grw.iterrows():
             df_grw.loc[samp,:].replace(to_replace=0.0,method='ffill',inplace=True)
         df_grw_label = df_grww.shift(-1).reindex(columns=['주간생육길이(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','leaf_area'])
@@ -108,31 +114,44 @@ def mlp_dataloader(args):
             
         env_idx = []
         for x in grw_idx:
-            arr = [x,x+1,x+2,x+3,x+4,x+5,x+6]
+            arr = [x-14,x-13,x-12,x-11,x-10,x-9,x-8,x-7,x-6,x-5,x-4,x-3,x-2,x-1,x,x+1,x+2,x+3,x+4,x+5,x+6]
+            # arr = [x,x+1,x+2,x+3,x+4,x+5,x+6]
             env_idx.append(arr)
 
         df_feat = []
         for x in range(len(env_idx)):
             a = df_env.iloc[env_idx[x]].stack().T.values
             df_feat.append(a)
+        df_feat = pd.DataFrame(df_feat)
+
+
+        env_cols = []
+        for y in range(21):
+            for x in range(len(df_env.columns)):
+                env_cols.append(df_env.columns[x]+'_' + str(y))
+        df_feat.columns = env_cols 
 
         df_feat = pd.DataFrame(df_feat)
         df_label = df_growth_total.reset_index().set_index(['index'])
         df_fets = pd.concat([df_feat]*16)
 
-        # Create Dataset
-        env_grw = pd.concat([df_fets.reset_index(drop=True),df_label.reset_index(drop=True)], axis=1)
+        # print(df_fets)
+        # df_target = df_label.drop(['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','leaf_area'],axis=1)
+        df_target = df_label
+        data = pd.concat([df_fets.reset_index(drop=True),df_target.reset_index(drop=True)],axis=1)
+        data = data[data['날짜_13'] != startdate]
+        data = data[data['날짜_13'] != startdate+7]
 
-        env_grw = env_grw[env_grw[0] != startdate]
-        env_grw = env_grw[env_grw[0] != startdate+7]
+        data = data[data['날짜_13'] != enddate-7]
+        data = data[data['날짜_13'] != enddate]
 
-        env_grw = env_grw[env_grw[0] != enddate-7]
-        env_grw = env_grw[env_grw[0] != enddate]
-
-        dataset = env_grw.drop([0,70,140,210,280,350,420],1)
+        data = data.drop(['날짜_0','날짜_1','날짜_2','날짜_3','날짜_4','날짜_5','날짜_6','날짜_7','날짜_8','날짜_9','날짜_10','날짜_11','날짜_12','날짜_14','날짜_15','날짜_16','날짜_17','날짜_18','날짜_19','날짜_20','날짜_6'],axis=1)
+        dataset = data.interpolate()
+        
 
     ds = dataset
     return ds
+
 
 
 

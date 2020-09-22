@@ -90,18 +90,16 @@ def build_model(inputs, outputs):
     return model
 
 
+
 def mlp_train(args):
     print('mlp_train')
     mode = args.target
-
-
-    path = args.data.train_data.path
-    growth = args.data.train_data.growth
  
     ds = get_dataloader(args)
-    exp_dir = args.util.path
+    exp_dir = args.experiment
 
     if mode == "product":
+        print("mlp product train")
         product_1 = args.data.train_data.product_1
         product_2 = args.data.train_data.product_2
         product_3 = args.data.train_data.product_3
@@ -132,15 +130,15 @@ def mlp_train(args):
         test_dataset.to_csv(exp_dir+"/test_dataset.csv")
         test_labels.to_csv(exp_dir+"/test_labels.csv")
 
+
     else:
-        growth = args.data.train_data.growth
-        env = args.data.train_data.env
-        # First Dataset Training
+        print("mlp growth train")
+    #     # First Dataset Training
         train_dataset = ds.sample(frac=0.8,random_state=0)
         test_dataset  = ds.drop(train_dataset.index)
        
-        train_labels = train_dataset[['주간생육길이(cm)','d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','dleaf_area']].copy()
-        test_labels = test_dataset[['주간생육길이(cm)','d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','dleaf_area']].copy()
+        train_labels = train_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
+        test_labels = test_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
 
         train_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
         test_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
@@ -148,37 +146,49 @@ def mlp_train(args):
         train_stats = train_dataset.describe()
         train_stats = train_stats.transpose()
 
+        test_stats = test_dataset.describe()
+        test_stats = test_stats.transpose()
+        
+        
+
         normed_train_data = (train_dataset - train_stats['mean']) / train_stats['std']
-        normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
-        model = build_model(len(train_dataset.keys()), len(train_labels.keys()))
-        model.summary()
+        normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
+        
+        X_train = normed_train_data
+        y_train = train_labels
 
-        filename = args.util.first_model
-        model.save(exp_dir + filename)
-        train_stats.to_csv(args.util.path+args.util.train_stats)  
+        print(X_train.columns)
 
-        test_dataset.to_csv(exp_dir+"/test_dataset.csv")
-        test_labels.to_csv(exp_dir+"/test_labels.csv")
+        config = [len(train_dataset.keys()),len(train_labels.keys())]
+        model = get_model(args,config)
+
+        model.fit(X_train.values, y_train.values)
+        filename = args.model_file
+        dump(model, exp_dir+filename)
+        test_dataset.to_csv(exp_dir+args.test_data.features)
+        test_labels.to_csv(exp_dir+args.test_data.labels)
+
+        print(normed_train_data.shape)
+        print(train_labels.shape)
+        print(normed_test_data.shape)
+        print(test_labels.shape)
 
 
-
-    # First Dataset Training
-    # train_dataset = ds.sample(frac=0.8,random_state=0)
-    # test_dataset  = ds.drop(train_dataset.index)
-
-
-def clip(input,ranges):
-    for col in range(len(input.columns)):
-        for row in range(len(input)):
-            if input.iloc[row,col] <= ranges[col][0]:
-                input.iloc[row,col] = ranges[col][0]
-            elif input.iloc[row,col] >= ranges[col][1]:
-                input.iloc[row,col] = ranges[col][1]
-            else:
-                input.iloc[row,col]
-    return input
+        mlp_infer(args)
 
 def mlp_infer(args):
+
+    def clip(input,ranges):
+        for col in range(len(input.columns)):
+            for row in range(len(input)):
+                if input.iloc[row,col] <= ranges[col][0]:
+                    input.iloc[row,col] = ranges[col][0]
+                elif input.iloc[row,col] >= ranges[col][1]:
+                    input.iloc[row,col] = ranges[col][1]
+                else:
+                    input.iloc[row,col]
+        return input
+
     target = args.target
 
     if target == "product":
@@ -187,35 +197,37 @@ def mlp_infer(args):
         filename = args.util.model
 
         train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
-        test_dataset = pd.read_csv(exp_dir+"/test_dataset.csv",index_col=0)
+        test_dataset = pd.read_csv(exp_dir+args.test_data.features,index_col=0)
         normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
         normed_test_data = normed_test_data.dropna()
         
-        test_labels = pd.read_csv(exp_dir + "/test_labels.csv",index_col=0)
-
-        model = build_model(len(test_dataset.keys()),len(test_labels.keys()))
+        test_labels = pd.read_csv(exp_dir + args.test_data.labels,index_col=0)
+        config = [len(train_dataset.keys()),len(train_labels.keys())]
+        model = get_model(args,config)
         model.load_weights(exp_dir+filename)
 
         ypred = pd.DataFrame(model.predict(normed_test_data))
-        ypred.to_csv(exp_dir+"product_prediction.csv")
+        ypred.to_csv(exp_dir+args.output.prediction)
     else:
-        print('mlp_infer')
+        print('growth_infer')
         ds = get_dataloader(args)
         exp_dir = args.util.path
-        filename = args.util.model
-        train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
+        filename = args.model_file
+        # train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
 
-        test_dataset = pd.read_csv(exp_dir+"/test_dataset.csv",index_col=0)
+        test_dataset = pd.read_csv(exp_dir+args.test_data.features,index_col=0)
 
-        normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
+        test_stats = test_dataset.describe()
+        test_stats = test_stats.transpose()
+
+        normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
         normed_test_data = normed_test_data.dropna()
+        X_test = normed_test_data
+        test_labels = pd.read_csv(exp_dir + args.test_data.labels,index_col=0)
+        config = [len(test_dataset.keys()),len(test_labels.keys())]
         
-        test_labels = pd.read_csv(exp_dir + "/test_labels.csv",index_col=0)
-
-        model = build_model(len(test_dataset.keys()),len(test_labels.keys()))
-        model.load_weights(exp_dir+filename)
-
-        ypred = pd.DataFrame(model.predict(normed_test_data))
+        model = get_model(args,config)
+        model = load(exp_dir+filename)
         
         variables = ('Grown_height(cm)', 'Thickness(mm)', 'Leaf Length(cm)', 'Leaf Width(cm)', 'Leaf Area')
 
@@ -225,20 +237,52 @@ def mlp_infer(args):
         ranges = [(5, 30), (5, 15), (5, 55), (0, 50), (2.0, 4.5)]         
         
 
-        for x in range(len(ypred)):
-            ypred= clip(ypred,ranges)
+        y_pred = pd.DataFrame(model.predict(normed_test_data))
+        y_test = pd.DataFrame(test_labels)
+
+        pred = args.output.prediction
+        y_pred.to_csv(exp_dir+pred)        
+
+
+        score = args.output.score
+        fi = args.output.feature_importance
+        s = []
+        for x in range(len(y_pred.columns)):
+            pred = y_pred.iloc[:,x]
+            grou = y_test.iloc[:,x]
+            
+            s.append(mean_squared_error(pred,grou,squared=False))
+        pd.DataFrame(s).to_csv(exp_dir+score)
+
+        col_sorted_by_importance=model.feature_importances_.argsort()
+        fig = go.Figure()
+        # fig.add_trace(go.Bar(y=model.feature_importances_[col_sorted_by_importance][:20]))
+        # fig.show()
+        
+
+        feat_imp=pd.DataFrame({
+            'cols':X_test.columns[col_sorted_by_importance],
+            'imps':model.feature_importances_[col_sorted_by_importance]
+        })
+
+        fig = px.bar(feat_imp.sort_values(['imps'], ascending=False)[:15],
+            x='cols', y='imps', labels={'cols':' ', 'imps':'feature importance'})
+        fig.show()
+        fig.write_image(exp_dir+fi)
+
+        for x in range(len(y_pred)):
+            y_pred= clip(y_pred,ranges)
             test_labels = clip(test_labels,ranges)
 
             fig1 = plt.figure(figsize=(6, 6))
             radar = ComplexRadar(fig1, variables, ranges)
             radar.fill(max_data,'g')
             radar.fill(min_data,color='w')
-            radar.plot(ypred.iloc[x],'r')
+            radar.plot(y_pred.iloc[x],'r')
             radar.plot(test_labels.iloc[x],'b')
-            
+            radar.plot(y_pred.iloc[x],color='r',marker='o')
             plt.savefig(exp_dir+"/growth_images/pred"+str(x)+".png")
-        ypred.to_csv(exp_dir+"growth+prediction.csv")
-
+        
 
 def multi_encoder_train(args):
     #@tf.function
