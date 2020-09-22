@@ -313,21 +313,26 @@ def multi_encoder_train(args):
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
             else:
+                e, g, _, _ = model.explain(test_ds, return_heatmap=True)
                 if args.util.env_heatmap.avail:
-                    e, _, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.env_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=e, filename=bar_path, x_labels=x_labels)
                 
                 if args.util.growth_heatmap.avail:
-                    _, g, _, _ = model.explain(test_ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
                     y_labels = [str(i) for i in range(1, args.data.num_samples+1)]
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
-                    draw_heatmap(heatmap=g, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=g, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.growth_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=g, filename=bar_path, x_labels=x_labels)
                 # shap test
                 # tf.compat.v1.disable_eager_execution()
                 # tf.compat.v1.disable_v2_behavior()
@@ -389,20 +394,26 @@ def multi_encoder_infer(args):
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
             else:
+                e, g, _, _ = model.explain(ds, return_heatmap=True)
                 if args.util.env_heatmap.avail:
-                    e, _, _, _ = model.explain(ds, return_heatmap=True)
                     x_labels = args.util.env_heatmap.x_labels
                     y_labels = [str(i) for i in range(args.data.seek_days, 0, -1)]
                     heatmap_path = os.path.join(save_path, args.util.env_heatmap.name)
-                    draw_heatmap(heatmap=e, x_labels=x_labels, y_labels=y_labels, filename=heatmap_path)
+                    draw_heatmap(heatmap=e, filename=heatmap_path, x_labels=x_labels, y_labels=y_labels)
+                    bar_name = "bar_" + args.util.env_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=e, filename=bar_path, x_labels=x_labels)
                 
                 if args.util.growth_heatmap.avail:
-                    _, g, _, _ = model.explain(ds, return_heatmap=True)
                     x_labels = args.util.growth_heatmap.x_labels
+                    y_labels = [str(i) for i in range(1, args.data.num_samples+1)]
                     heatmap_path = os.path.join(save_path, args.util.growth_heatmap.name)
                     draw_bargraph(data=g, filename=heatmap_path, x_labels=x_labels)
+                    bar_name = "bar_" + args.util.growth_heatmap.name
+                    bar_path = os.path.join(save_path, bar_name)
+                    draw_bargraph(data=g, filename=bar_path, x_labels=x_labels)
 
 def decision_tree_train(args):
     print("xgboost version:", xgb.__version__)
