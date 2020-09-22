@@ -95,7 +95,7 @@ def dataloader4lstm_enc_dec_env(args):
         else:
             raise ValueError(name)
     
-    train_df, label_dfs = make_data_frame_env(df_dict=df_dict, seek_days=args.data.seek_days)
+    train_df, label_dfs = make_data_frame_env(df_dict=df_dict, seek_days=args.data.seek_days, interval=args.data.interval)
 
     data = df2numpy(train_df, args.data.seek_days, offset=7, dropkey=['날짜'])
     
@@ -182,12 +182,12 @@ def make_data_frame(file_names, path, label=False, seek_days=43):
     
     return df_list
 
-def make_data_frame_env(df_dict, seek_days=43):
-
+def make_data_frame_env(df_dict, seek_days=43, interval=7):
 
     standard_index = 0
     date = df_dict["product_3"].iloc[standard_index]["날짜"]
     env_index = df_dict["env"].index[df_dict["env"]["날짜"]==date].tolist()[0]
+    env_index = env_index - interval
     num_samples = len(df_dict["product_3"]) // len(df_dict["product_3"]["날짜"].unique())
 
     while env_index < seek_days:
