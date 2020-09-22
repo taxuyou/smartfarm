@@ -252,17 +252,27 @@ def multi_encoder_train(args):
 
         return loss, out
 
-    def inference(inp, model):
+    def inference(inp, targ, model):
+        test_loss = keras.metrics.Mean(name="test_loss")
         out = model(inp, training=False)
+        loss = keras.losses.mean_squared_error(targ, out)
+        test_loss(loss)
+
+        template = 'Test Loss: {}'
+        print(template.format(test_loss.result()))
+
         return out
 
     # get data loader - [[data], [label]]
-    ds = get_dataloader(args)
+    ds, input_shapes, output_shape = get_dataloader(args)
+    print("input and output shape")
+    print(input_shapes, output_shape)
+    print("="*20)
     train_ds = ds[:-3]
     test_ds = ds[-2:-1]
     # input parameters for lstm_inc_dec model
-    args.model.config.input_shapes = get_input_shapes(args)
-    args.model.config.output_shape = get_output_shapes(args)
+    args.model.config.input_shapes = input_shapes
+    args.model.config.output_shape = output_shape
 
     save_path = args.util.save_path
     
@@ -297,7 +307,7 @@ def multi_encoder_train(args):
             if epoch % 100 == 0 or epoch == (EPOCHS - 1):
                 checkpoint.save(file_prefix=checkpoint_dir)
                 test_data, test_targets = test_ds[-1]
-                out = inference(test_data, model)
+                out = inference(test_data, test_targets, model)
                 output_path = os.path.join(save_path, 'output.csv')
                 groundtruth_path = os.path.join(save_path, 'groundtruth.csv')
                 tensor2csv(output_path, out)
