@@ -18,7 +18,7 @@ def dataloader4lstm_enc_dec(args):
         sheet_df = pd.read_excel(df, 'Sheet1')
 
         if '초장(cm)' in sheet_df.columns:
-            data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['주차'])[:args.data.num_data]
+            data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['날짜'])[:args.data.num_data]
         elif '샘플번호' in sheet_df.columns:
             data = df2numpy(sheet_df, args.data.num_samples, offset=args.data.num_samples, dropkey=['날짜', '샘플번호'])[:args.data.num_data]
         else:
@@ -111,3 +111,50 @@ def dataloader4lstm_enc_dec_env(args):
             ])
 
     return ds
+
+def make_data_frame(file_names, path, label=False, seek_days=43):
+
+    data = dict()
+    for name in file_names:
+        file_path = os.path.join(path, name)
+        df = pd.ExcelFile(file_path)
+        sheet_df = pd.read_excel(df, 'Sheet1')
+        
+        if "env" in name:
+            data["env"] = sheet_df
+        elif "growth" in name:
+            data["growth"] = sheet_df
+        elif "product_1" in name:
+            data["product_1"] = sheet_df
+        elif "product_2" in name:
+            data["product_2"] = sheet_df
+        elif "product_3" in name:
+            data["product_3"] = sheet_df
+        elif "product_4" in name:
+            data["product_4"] = sheet_df
+        else:
+            raise ValueError(name)
+        
+    if not label:
+        standard_index = 0
+        date = data["product_1"].iloc[standard_index]["날짜"]
+        env_index = data["env"].index[data["env"]["날짜"]==date].tolist()[0]
+        num_samples = len(data["product_1"]) // len(data["product_1"]["날짜"].unique())
+
+        while env_index < seek_days:
+            standard_index += num_samples
+            date = data["product_1"].iloc[standard_index]["날짜"]
+            env_index = data["env"].index[data["env"]["날짜"]==date].tolist()[0]
+        
+        new_env_df = data["env"].iloc[index - seek_days + 1:]
+        g_index = data["growth"].index[data["growth"]["날짜"]==date].tolist()[0]
+        new_growth_df = data["growth"].iloc[g_index:]
+        new_product_1_df = data["product_1"].iloc[standard_index:]
+        new_product_2_df = data["product_2"].iloc[standard_index:]
+
+        df_list = [new_env_df, new_growth_df, new_product_1_df, new_product_2_df]
+
+    else:
+        df_list = [data["product_3"], data["product_4"]]
+
+    return df_list
