@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 class Attention(keras.Model):
-    def __init__(self, input_shapes, permute=True):
+    def __init__(self, input_shapes, permute=False):
         super(Attention, self).__init__()
         self.permute = permute
         if self.permute:
