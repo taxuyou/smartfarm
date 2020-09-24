@@ -17,6 +17,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # import shap
+from joblib import dump, load
+from sklearn.metrics import mean_squared_error
+
+import plotly_express as px
+import plotly.offline as po
+import plotly.graph_objects as go
 
 from utils.radar import ComplexRadar
 import json
@@ -98,83 +104,47 @@ def mlp_train(args):
     ds = get_dataloader(args)
     exp_dir = args.experiment
 
-    if mode == "product":
-        print("mlp product train")
-        product_1 = args.data.train_data.product_1
-        product_2 = args.data.train_data.product_2
-        product_3 = args.data.train_data.product_3
-        product_4 = args.data.train_data.product_4
+    print("mlp growth train")
+#     # First Dataset Training
+    train_dataset = ds.sample(frac=0.8,random_state=0)
+    test_dataset  = ds.drop(train_dataset.index)
+    
+    train_labels = train_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
+    test_labels = test_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
 
-        train_dataset = ds.sample(frac=0.8,random_state=0)
-        test_dataset  = ds.drop(train_dataset.index)
+    train_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
+    test_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
 
-        train_feats = train_dataset[['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','개화화방위치(cm)','화방경경(mm)','화방간거리(cm)','꽃과 줄기거리(cm)','leaf_area']].copy()
-        test_feats = test_dataset[['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','개화화방위치(cm)','화방경경(mm)','화방간거리(cm)','꽃과 줄기거리(cm)','leaf_area']].copy()
+    train_stats = train_dataset.describe()
+    train_stats = train_stats.transpose()
 
-        train_labels = train_dataset.drop(['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','개화화방위치(cm)','화방경경(mm)','화방간거리(cm)','꽃과 줄기거리(cm)','leaf_area'],axis=1)
-        test_labels  = test_dataset.drop(['초장(cm)','줄기굵기(mm)','잎길이(cm)','잎폭(cm)','개화화방위치(cm)','화방경경(mm)','화방간거리(cm)','꽃과 줄기거리(cm)','leaf_area'],axis=1)
+    test_stats = test_dataset.describe()
+    test_stats = test_stats.transpose()
+    
+    normed_train_data = (train_dataset - train_stats['mean']) / train_stats['std']
+    normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
+    
+    X_train = normed_train_data
+    y_train = train_labels
 
-        train_stats = train_feats.describe()
-        train_stats = train_stats.transpose()     
+    print(X_train.columns)
 
-        normed_train_data = (train_dataset - train_stats['mean']) / train_stats['std']
-        normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
+    config = [len(train_dataset.keys()),len(train_labels.keys())]
+    model = get_model(args,config)
 
-        model = build_model(len(train_dataset.keys()), len(train_labels.keys()))
-        model.summary()
+    model.fit(X_train.values, y_train.values)
+    filename = args.model_file
+    dump(model, exp_dir+filename)
+    test_dataset.to_csv(exp_dir+args.test_data.features)
+    test_labels.to_csv(exp_dir+args.test_data.labels)
 
-        filename = args.util.second_model
-        model.save(exp_dir + filename)
-        train_stats.to_csv(args.util.path+args.util.train_stats)  
-
-        test_dataset.to_csv(exp_dir+"/test_dataset.csv")
-        test_labels.to_csv(exp_dir+"/test_labels.csv")
-
-
-    else:
-        print("mlp growth train")
-    #     # First Dataset Training
-        train_dataset = ds.sample(frac=0.8,random_state=0)
-        test_dataset  = ds.drop(train_dataset.index)
-       
-        train_labels = train_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
-        test_labels = test_dataset[['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area']].copy()
-
-        train_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
-        test_dataset.drop(['d줄기굵기(mm)','d잎길이(cm)','d잎폭(cm)','주간생육길이(cm)','dleaf_area'],axis=1,inplace=True)
-
-        train_stats = train_dataset.describe()
-        train_stats = train_stats.transpose()
-
-        test_stats = test_dataset.describe()
-        test_stats = test_stats.transpose()
-        
-        
-
-        normed_train_data = (train_dataset - train_stats['mean']) / train_stats['std']
-        normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
-        
-        X_train = normed_train_data
-        y_train = train_labels
-
-        print(X_train.columns)
-
-        config = [len(train_dataset.keys()),len(train_labels.keys())]
-        model = get_model(args,config)
-
-        model.fit(X_train.values, y_train.values)
-        filename = args.model_file
-        dump(model, exp_dir+filename)
-        test_dataset.to_csv(exp_dir+args.test_data.features)
-        test_labels.to_csv(exp_dir+args.test_data.labels)
-
-        print(normed_train_data.shape)
-        print(train_labels.shape)
-        print(normed_test_data.shape)
-        print(test_labels.shape)
+    print(normed_train_data.shape)
+    print(train_labels.shape)
+    print(normed_test_data.shape)
+    print(test_labels.shape)
 
 
-        mlp_infer(args)
+    mlp_infer(args)
 
 def mlp_infer(args):
 
@@ -191,97 +161,78 @@ def mlp_infer(args):
 
     target = args.target
 
-    if target == "product":
-        ds = get_autoloader(args)
-        exp_dir = args.util.path
-        filename = args.util.model
+    print('growth_infer')
+    ds = get_dataloader(args)
+    exp_dir = args.util.path
+    filename = args.model_file
 
-        train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
-        test_dataset = pd.read_csv(exp_dir+args.test_data.features,index_col=0)
-        normed_test_data = (test_dataset - train_stats['mean']) / train_stats['std']
-        normed_test_data = normed_test_data.dropna()
+    test_dataset = pd.read_csv(exp_dir+args.test_data.features,index_col=0)
+
+    test_stats = test_dataset.describe()
+    test_stats = test_stats.transpose()
+
+    normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
+    normed_test_data = normed_test_data.dropna()
+    X_test = normed_test_data
+    test_labels = pd.read_csv(exp_dir + args.test_data.labels,index_col=0)
+    config = [len(test_dataset.keys()),len(test_labels.keys())]
+    
+    model = get_model(args,config)
+    model = load(exp_dir+filename)
+    
+
+
+
+
+    y_pred = pd.DataFrame(model.predict(normed_test_data))
+    y_test = pd.DataFrame(test_labels)
+
+    pred = args.output.prediction
+    y_pred.to_csv(exp_dir+pred)        
+
+
+    score = args.output.score
+    fi = args.output.feature_importance
+    s = []
+    for x in range(len(y_pred.columns)):
+        pred = y_pred.iloc[:,x]
+        grou = y_test.iloc[:,x]
         
-        test_labels = pd.read_csv(exp_dir + args.test_data.labels,index_col=0)
-        config = [len(train_dataset.keys()),len(train_labels.keys())]
-        model = get_model(args,config)
-        model.load_weights(exp_dir+filename)
+        s.append(mean_squared_error(pred,grou,squared=True))
+    pd.DataFrame(s).to_csv(exp_dir+score)
 
-        ypred = pd.DataFrame(model.predict(normed_test_data))
-        ypred.to_csv(exp_dir+args.output.prediction)
-    else:
-        print('growth_infer')
-        ds = get_dataloader(args)
-        exp_dir = args.util.path
-        filename = args.model_file
-        # train_stats = pd.read_csv(exp_dir+args.util.train_stats,index_col=0)
+    col_sorted_by_importance=model.feature_importances_.argsort()
 
-        test_dataset = pd.read_csv(exp_dir+args.test_data.features,index_col=0)
+    feat_imp=pd.DataFrame({
+        'cols':X_test.columns[col_sorted_by_importance],
+        'imps':model.feature_importances_[col_sorted_by_importance]
+    })
 
-        test_stats = test_dataset.describe()
-        test_stats = test_stats.transpose()
-
-        normed_test_data = (test_dataset - test_stats['mean']) / test_stats['std']
-        normed_test_data = normed_test_data.dropna()
-        X_test = normed_test_data
-        test_labels = pd.read_csv(exp_dir + args.test_data.labels,index_col=0)
-        config = [len(test_dataset.keys()),len(test_labels.keys())]
-        
-        model = get_model(args,config)
-        model = load(exp_dir+filename)
-        
-        variables = ('Grown_height(cm)', 'Thickness(mm)', 'Leaf Length(cm)', 'Leaf Width(cm)', 'Leaf Area')
-
-        max_data =(20, 11, 35, 30, 3.5) 
-        min_data =(15, 9, 25, 20, 3)
-
-        ranges = [(5, 30), (5, 15), (5, 55), (0, 50), (2.0, 4.5)]         
-        
-
-        y_pred = pd.DataFrame(model.predict(normed_test_data))
-        y_test = pd.DataFrame(test_labels)
-
-        pred = args.output.prediction
-        y_pred.to_csv(exp_dir+pred)        
+    fig = px.bar(feat_imp.sort_values(['imps'], ascending=False)[:15],
+        x='cols', y='imps', labels={'cols':' ', 'imps':'feature importance'})
+    fig.show()
+    fig.write_image(exp_dir+fi)
 
 
-        score = args.output.score
-        fi = args.output.feature_importance
-        s = []
-        for x in range(len(y_pred.columns)):
-            pred = y_pred.iloc[:,x]
-            grou = y_test.iloc[:,x]
-            
-            s.append(mean_squared_error(pred,grou,squared=False))
-        pd.DataFrame(s).to_csv(exp_dir+score)
+    variables = ( 'Thickness(mm)', 'Leaf Length(cm)', 'Leaf Width(cm)','Grown_height(cm)', 'Leaf Area')
+    ranges = [(0, 15), (5, 30), (5, 35), (0, 55), (0.0, 2.5)]             
 
-        col_sorted_by_importance=model.feature_importances_.argsort()
-        fig = go.Figure()
-        # fig.add_trace(go.Bar(y=model.feature_importances_[col_sorted_by_importance][:20]))
-        # fig.show()
-        
+    # max_data =(20, 11, 35, 30, 3.5) 
+    # min_data =(15, 9, 25, 20, 3)
 
-        feat_imp=pd.DataFrame({
-            'cols':X_test.columns[col_sorted_by_importance],
-            'imps':model.feature_importances_[col_sorted_by_importance]
-        })
+    for x in range(len(y_pred)):
+        y_pred= clip(y_pred,ranges)
+        test_labels = clip(test_labels,ranges)
 
-        fig = px.bar(feat_imp.sort_values(['imps'], ascending=False)[:15],
-            x='cols', y='imps', labels={'cols':' ', 'imps':'feature importance'})
-        fig.show()
-        fig.write_image(exp_dir+fi)
+        fig1 = plt.figure(figsize=(6, 6))
+        radar = ComplexRadar(fig1, variables, ranges)
+        # radar.fill(max_data,'g')
+        # radar.fill(min_data,color='w')
+        radar.plot(y_pred.iloc[x],'r')
+        radar.plot(test_labels.iloc[x],'b')
+        radar.plot(y_pred.iloc[x],color='r',marker='o')
+        plt.savefig(exp_dir+"/growth_images/pred"+str(x)+".png")
 
-        for x in range(len(y_pred)):
-            y_pred= clip(y_pred,ranges)
-            test_labels = clip(test_labels,ranges)
-
-            fig1 = plt.figure(figsize=(6, 6))
-            radar = ComplexRadar(fig1, variables, ranges)
-            radar.fill(max_data,'g')
-            radar.fill(min_data,color='w')
-            radar.plot(y_pred.iloc[x],'r')
-            radar.plot(test_labels.iloc[x],'b')
-            radar.plot(y_pred.iloc[x],color='r',marker='o')
-            plt.savefig(exp_dir+"/growth_images/pred"+str(x)+".png")
         
 
 def multi_encoder_train(args):

@@ -1,12 +1,12 @@
 {
     "predict": "mlp_train",
-    "target": "growth",
+    "target": "product",
     "directory":"dataset/2nd_data/myeong/",
-    "experiment":"./experiments/mlp",
+    "experiment":"experiments/mlp",
     "model_file":"/models/growth_model.h5",
     "train_data":{
         "grw": "myeong_growth_detail_dataa.xlsx",
-        "env" : "myeong_env_detail_data.xlsx",
+        "env" : "myeong_env_detail_data_.xlsx",
         "product_1" : "myeong_product_1_data.xlsx",
         "product_2" : "myeong_product_2_data.xlsx",
         "product_3" : "myeong_product_3_data.xlsx",

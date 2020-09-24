@@ -33,7 +33,9 @@ def get_model(args, config=None):
         from .basic_lstm import Basic_LSTM
         model = Basic_LSTM(config)
         '''
-        
+    elif name == 'mlp':
+        from .mlp import get_mlp_model
+        model = get_mlp_model(args)
     else:
         raise ValueError(args.model.name)
     
