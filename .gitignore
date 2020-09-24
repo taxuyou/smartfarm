@@ -1,0 +1,7 @@
+# Exclude __pycache__
+
+__pycache__/
+dataloader/__pycache__/
+models/__pycache__/
+optimizer/__pycache__/
+utils/__pycache__/
