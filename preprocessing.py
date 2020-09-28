@@ -176,6 +176,19 @@ def env_data_preprocessing(args):
         avg_env_df = avg_env_df.interpolate()
         avg_env_df = avg_env_df.drop(columns=['날짜표준편차', '최소날짜', '최대날짜', '시간', '시간표준편차', '최소시간', '최대시간'])
         avg_env_df['주야간온도차이'] = avg_env_df['주간평균온도'] - avg_env_df['야간평균온도']
+        avg_env_df['주야간온도차8도이상인날수'] = 0
+
+        x = avg_env_df.iloc[0]['주야간온도차이']
+        if np.absolute(x) >= 8:
+            avg_env_df.iloc[0]['주야간온도차8도이상인날수'] = 1
+                
+        for i in range(1, len(avg_env_df)):
+            x = avg_env_df.iloc[i]['주야간온도차이']
+            if np.absolute(x) >= 8:
+                avg_env_df.at[i, '주야간온도차8도이상인날수'] = avg_env_df.iloc[i - 1]['주야간온도차8도이상인날수'] + 1
+            else:
+                avg_env_df.at[i, '주야간온도차8도이상인날수'] = avg_env_df.iloc[i - 1]['주야간온도차8도이상인날수']
+
         avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
 def growth_data_preprocessing(args):
