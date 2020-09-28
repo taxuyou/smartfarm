@@ -1,8 +1,8 @@
 {
-    "predict": "mlp_train",
+    "predict": "rf_train",
     "target": "product",
     "directory":"dataset/2nd_data/myeong/",
-    "experiment":"experiments/mlp",
+    "experiment":"experiments/rf",
     "model_file":"/models/growth_model.h5",
     "train_data":{
         "grw": "myeong_growth_detail_dataa.xlsx",
@@ -30,48 +30,23 @@
         "growth":{
             "features":["초장(cm)","줄기굵기(mm)","잎길이(cm)","잎폭(cm)","leaf_area"],
             "target":["주간생육길이(cm)","d줄기굵기(mm)","d잎길이(cm)","d잎폭(cm)","dleaf_area"]
-        },
-        "product":{}
+        }
     },
 
     "model":{
-        "name":"mlp",
-        "pretrained": false,
-        "config": {
-            "permute": false,
-            "avg": true
-
-        }
-    },
-
-    "train":{
-        "epochs": 200,
-        "batch": 16,
-        "metric": "mse"
-    },
-
-    "optimizer":{
-        "algorithm":"sgd",
-        "config": {
-            "learning_rate": 0.0001,
-            "momentum": 0.9,
-            "nesterov": true
-        }
+        "name":"rf",
+        "pretrained": false
     },
 
     "util":{
-        "path": "./experiments/mlp",
-        "model": "/mlp_env2grw",
-        "first_model": "/mlp_env2grw",
-        "second_model": "/mlp_grw2pro",
+        "path": "./experiments/rf",
+        "model": "/rf_env2grw",
+        "first_model": "/rf_env2grw",
+        "second_model": "/rf_grw2pro",
         "train_stats":"/train_stats.csv",
         "bar": {
             "avail": true,
             "name": "env_bar.png"
         }
-    },
-
-    "device":{
-        "name": "/device:GPU:0"
     }
 }

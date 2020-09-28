@@ -91,6 +91,27 @@ def suitable_info(df=None):
                        '적정온도변화폭(하위)', '적정온도변화폭(상위)']
     return suitable
 
+def nighttime_info(df=None):
+    if df is None:
+        raise ValueError(df)
+    
+    date = df['날짜'].unique()
+    today = df[df['날짜'] == date[0]]
+    tomorrow = df[df['날짜'] == date[1]]
+    
+    sunset_df = today[today['시간'] > 190000]
+    sunrise_df = tomorrow[(tomorrow['시간'] < 60000)]
+    nighttime_df = pd.concat([sunset_df, sunrise_df])
+    nighttime_temp = nighttime_df['실내온도'].mean()
+    nighttime_hd_df= nighttime_df[(nighttime_df['HD'] >= 2.8) & (nighttime_df['HD'] <= 6)]
+    nighttime_hd = len(nighttime_hd_df['HD']) / 60
+    night_list = [nighttime_temp, nighttime_hd]
+    
+    night = pd.DataFrame([night_list])
+    night.columns = ["야간평균온도", "일몰일출적합증산(HD)누적시간"]
+    
+    return night
+
 def env_data_preprocessing(args):
     scr = args.env.src_path
     files = args.env.names
@@ -129,29 +150,46 @@ def env_data_preprocessing(args):
 
     avg_env_df = pd.DataFrame()
 
-    for u in new_env_df['날짜'].unique():
-        a = new_env_df[new_env_df['날짜'] == u].mean().to_frame().T
+    date_list = new_env_df['날짜'].unique()
+
+    for i in range(0, len(date_list)-1):
+        a = new_env_df[new_env_df['날짜'] == date_list[i]].mean().to_frame().T
         a.columns = headers
-        s = new_env_df[new_env_df['날짜'] == u].std().to_frame().T
+        s = new_env_df[new_env_df['날짜'] == date_list[i]].std().to_frame().T
         s.columns = std_headers
-        min_ = new_env_df[new_env_df['날짜'] == u].min().to_frame().T
+        min_ = new_env_df[new_env_df['날짜'] == date_list[i]].min().to_frame().T
         min_.columns = min_headers
-        max_ = new_env_df[new_env_df['날짜'] == u].max().to_frame().T
+        max_ = new_env_df[new_env_df['날짜'] == date_list[i]].max().to_frame().T
         max_.columns = max_headers
         
-        hd = HD_cumulative_time(df=new_env_df[new_env_df['날짜'] == u])
-        tt = temperature_cumulative_time(df=new_env_df[new_env_df['날짜'] == u])
-        ta = temperature_average(df=new_env_df[new_env_df['날짜'] == u])
-        su = suitable_info(df=new_env_df[new_env_df['날짜'] == u])
+        hd = HD_cumulative_time(df=new_env_df[new_env_df['날짜'] == date_list[i]])
+        tt = temperature_cumulative_time(df=new_env_df[new_env_df['날짜'] == date_list[i]])
+        ta = temperature_average(df=new_env_df[new_env_df['날짜'] == date_list[i]])
+        su = suitable_info(df=new_env_df[new_env_df['날짜'] == date_list[i]])
+        n = nighttime_info(df=new_env_df[(new_env_df['날짜'] == date_list[i]) | (new_env_df['날짜'] == date_list[i+1])])
         
-        stats = pd.concat([a, s, min_, max_, hd, tt, ta, su], axis=1)
+        stats = pd.concat([a, s, min_, max_, hd, tt, ta, su, n], axis=1)
         avg_env_df = pd.concat([avg_env_df, stats])
 
-    avg_env_df = avg_env_df.reset_index()
-    avg_env_df = avg_env_df.drop(columns=['index'])
-    avg_env_df = avg_env_df.interpolate()
-    avg_env_df = avg_env_df.drop(columns=['날짜표준편차', '최소날짜', '최대날짜', '시간', '시간표준편차', '최소시간', '최대시간'])
-    avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
+        avg_env_df = avg_env_df.reset_index()
+        avg_env_df = avg_env_df.drop(columns=['index'])
+        avg_env_df = avg_env_df.interpolate()
+        avg_env_df = avg_env_df.drop(columns=['날짜표준편차', '최소날짜', '최대날짜', '시간', '시간표준편차', '최소시간', '최대시간'])
+        avg_env_df['주야간온도차이'] = avg_env_df['주간평균온도'] - avg_env_df['야간평균온도']
+        avg_env_df['주야간온도차8도이상인날수'] = 0
+
+        x = avg_env_df.iloc[0]['주야간온도차이']
+        if np.absolute(x) >= 8:
+            avg_env_df.iloc[0]['주야간온도차8도이상인날수'] = 1
+                
+        for i in range(1, len(avg_env_df)):
+            x = avg_env_df.iloc[i]['주야간온도차이']
+            if np.absolute(x) >= 8:
+                avg_env_df.at[i, '주야간온도차8도이상인날수'] = avg_env_df.iloc[i - 1]['주야간온도차8도이상인날수'] + 1
+            else:
+                avg_env_df.at[i, '주야간온도차8도이상인날수'] = avg_env_df.iloc[i - 1]['주야간온도차8도이상인날수']
+
+        avg_env_df.to_excel(save_name, na_rep=0, header=True, index=False)
 
 def growth_data_preprocessing(args):
     scr = args.growth.src_path

@@ -17,25 +17,9 @@ def get_model(args, config=None):
             from .lstm_enc_dec import Encoder_Decoder
             model = Encoder_Decoder(input_shapes=args.model.config.input_shapes, 
                                     output_shape=args.model.config.output_shape)
-    
-    elif name == 'decision_tree':
-        from .decision_tree import get_decision_tree_model
-        model = get_decision_tree_model(args)
-
-    elif name == 'multiout_decision_tree':
-        from .decision_tree import get_decision_tree_model
-        model = get_multiout_decision_tree_model(args)
-
-    elif name == 'basic_lstm':
-        from .basic_lstm import get_basic_lstm_model
-        model = get_basic_lstm_model(config)
-        '''
-        from .basic_lstm import Basic_LSTM
-        model = Basic_LSTM(config)
-        '''
-    elif name == 'mlp':
-        from .mlp import get_mlp_model
-        model = get_mlp_model(args)
+    elif name == 'rf':
+        from .rf import get_rf_model
+        model = get_rf_model(args)
     else:
         raise ValueError(args.model.name)
     

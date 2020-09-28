@@ -5,9 +5,9 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
-__all__ = ['mlp_dataloader']
+__all__ = ['rf_dataloader']
 
-def mlp_dataloader(args):
+def rf_dataloader(args):
     path = args.directory
     mode = args.target
 
