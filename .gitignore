@@ -5,13 +5,18 @@ dataloader/__pycache__/
 models/__pycache__/
 optimizer/__pycache__/
 utils/__pycache__/
+
 experiments/*
 dataset/3rd_data/*
 configs/*
+exp/*
+.ipynb_checkpoints/*
 
 dataloader/rda_dataloader.py
 models/basic_lstm.py
 models/decision_tree.py
+main_origin.py
+test.csv
 
 !configs/beak.json
 !configs/hwang.json
