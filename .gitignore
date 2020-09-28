@@ -5,9 +5,9 @@ dataloader/__pycache__/
 models/__pycache__/
 optimizer/__pycache__/
 utils/__pycache__/
-experiments/
-dataset/3rd_data/
-configs/
+experiments/*
+dataset/3rd_data/*
+configs/*
 
 dataloader/rda_dataloader.py
 models/basic_lstm.py
