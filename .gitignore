@@ -17,6 +17,8 @@ models/basic_lstm.py
 models/decision_tree.py
 main_origin.py
 test.csv
+dataset/2nd_data/avg_env_data2.xlsx
+dataset/2nd_data/harvest.csv
 
 !configs/beak.json
 !configs/hwang.json
