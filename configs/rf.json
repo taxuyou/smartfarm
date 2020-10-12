@@ -1,6 +1,5 @@
 {
     "predict": "rf_train",
-    "target": "product",
     "directory":"dataset/2nd_data/myeong/",
     "experiment":"experiments/rf",
     "model_file":"/models/growth_model.h5",
@@ -20,33 +19,18 @@
     },
 
     "output":{
-        "train_loss":"/training_loss.png",
         "prediction":"/prediction.csv",
         "score":"/score.csv",
         "feature_importance":"/feature_importance.png"
     },
 
-    "columns":{
-        "growth":{
-            "features":["초장(cm)","줄기굵기(mm)","잎길이(cm)","잎폭(cm)","leaf_area"],
-            "target":["주간생육길이(cm)","d줄기굵기(mm)","d잎길이(cm)","d잎폭(cm)","dleaf_area"]
-        }
-    },
-
     "model":{
-        "name":"rf",
-        "pretrained": false
+        "name":"rf"
     },
 
     "util":{
         "path": "./experiments/rf",
         "model": "/rf_env2grw",
-        "first_model": "/rf_env2grw",
-        "second_model": "/rf_grw2pro",
-        "train_stats":"/train_stats.csv",
-        "bar": {
-            "avail": true,
-            "name": "env_bar.png"
-        }
+        "train_stats":"/train_stats.csv"
     }
 }

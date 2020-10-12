@@ -9,7 +9,6 @@ __all__ = ['rf_dataloader']
 
 def rf_dataloader(args):
     path = args.directory
-    mode = args.target
 
     print("target: growth")
     grw = args.train_data.grw
@@ -91,16 +90,3 @@ def rf_dataloader(args):
 
     ds = dataset
     return ds
-
-
-
-
-
-def process_product(ds):
-    print('processing product')
-
-def first_step_dataset(ds):
-    print('first step dataset')
-
-def second_step_dataset(ds):
-    print('seoncd step dataset')
