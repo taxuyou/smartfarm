@@ -66,7 +66,6 @@ class Runner():
 
 def rf_train(args):
     print('rf_train')
-    mode = args.target
  
     ds = get_dataloader(args)
     exp_dir = args.experiment
@@ -104,12 +103,12 @@ def rf_train(args):
     dump(model, exp_dir+filename)
     test_dataset.to_csv(exp_dir+args.test_data.features)
     test_labels.to_csv(exp_dir+args.test_data.labels)
+    train_stats.to_csv(exp_dir+args.util.train_stats)
 
     print(normed_train_data.shape)
     print(train_labels.shape)
     print(normed_test_data.shape)
     print(test_labels.shape)
-
 
     rf_infer(args)
 
@@ -125,8 +124,6 @@ def rf_infer(args):
                 else:
                     input.iloc[row,col]
         return input
-
-    target = args.target
 
     print('growth_infer')
     ds = get_dataloader(args)
